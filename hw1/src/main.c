@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <dirent.h>
 //Space to store the results for analysis map
 struct Analysis analysis_space[NFILES];
 //Space to store the results for stats map

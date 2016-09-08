@@ -5,38 +5,52 @@
 #include <stdio.h>
 #include <string.h>
 //Implement map_reduce.h functions here.
+// Help Menu Print Funtion 
+int help(){
+printf("%s\n", "Usage: ./mapreduce [h|v] FUNC DIR");
+printf("%s\n","FUNC");
+printf("%s\n","Which operation you would like to run on the data:");
+printf("%s\n","ana - Analysis of various text files in a directory.");
+printf("%s\n","stats - Calculates stats on files which contain only numbers.");
+printf("%s\n","DIR");
+printf("%s\n","The directory in which the files are located.");
+printf("%s\n","Options:");
+printf("%s\n","-h");
+printf("%s\n","Prints this help menu.");
+printf("%s\n","-v");
+printf("%s\n","Prints the map function’s results, stating the file it’s from.");
+return 0;
+}
+// Validate Agrument Function Defination 
 int validateargs(int argc, char** argv){
-	printf("%d\t%s\n", argc,*argv);
-	//*argv=*(argv+1);
-	//printf("%s\n",*argv);
-    // Invalidate Arguments 0 or 1 Argument 
+	
+	// Invalidate Arguments 0 or 1 Argument 
 	if (argc < 2){
-	printf("%s\n","Invalidate Arguments");
-	//print help menu 
+	printf("%s\n","Invalid Arguments");
+	help();
 	return -1;
 	}
 	
 	else if(argc == 2){
 		//validating first argument 
-		if (strcmp("./map_reduce",*argv)){
+		if (strcmp("./map_reduce",*argv) == 0){
 			
 			*argv = *(argv+1);
 
-			
-			if(strcmp(*argv,"-h")){
+			if(strcmp(*argv,"-h") == 0){
 				// print menu here 
-				printf("%s\n","user gave -h");
+				help();
 				return EXIT_SUCCESS;
 			}
 			else {
-				printf("%s\n","Invalid Arguments in 2");
+				//print menu here 
+				help();
 				return -1;
-				//print Invalidate arguments menu 
-			}
-			
+				}
 		}
 		else{
-			printf("%s\n",*(argv+1));
+			printf("%s\n","Invalid Arguments");
+			help();
 			return -1;
 			//if first argument is not a ./mapreduce 
 		}
@@ -44,13 +58,13 @@ int validateargs(int argc, char** argv){
 	}
 	else if (argc == 3){
 
-		if(strcmp(*argv,"./map_reduce")){
+		if(strcmp(*argv,"./map_reduce")==0){
 			
 			*argv = *(argv+1);
 			
-			if(strcmp(*argv,"-h")){
+			if(strcmp(*argv,"-h")==0){
 				// print menu here 
-				printf("%s\n","user gave -h");
+				help();
 				return EXIT_SUCCESS;
 			}
 
@@ -98,3 +112,6 @@ int validateargs(int argc, char** argv){
 	}
 	return -1;
 }
+
+
+
