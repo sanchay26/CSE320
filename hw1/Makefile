@@ -4,3 +4,10 @@
 # Look at the introduction doc for information on how make a Makefile.
 # This make file must build according to the structure described in the
 # introduction doc, if it doesn't you will get a ZERO!
+CFLAGS = -Wall -Werror
+map_reduce.o: ./src/map_reduce.c
+	gcc $(CFLAGS) -c $^
+map_reduce:
+	gcc $(CFLAGS) map_reduce.o ./src/main.c -o map_reduce
+clean:
+	rm -f *.o map_reduce
