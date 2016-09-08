@@ -35,7 +35,7 @@ int validateargs(int argc, char** argv){
 		//validating first argument 
 		if (strcmp("./map_reduce",*argv) == 0){
 			
-			*argv = *(argv+1);
+			argv++;
 
 			if(strcmp(*argv,"-h") == 0){
 				// print menu here 
@@ -60,7 +60,7 @@ int validateargs(int argc, char** argv){
 
 		if(strcmp(*argv,"./map_reduce")==0){
 			
-			*argv = *(argv+1);
+			argv++;
 			
 			if(strcmp(*argv,"-h")==0){
 				// print menu here 
@@ -68,8 +68,10 @@ int validateargs(int argc, char** argv){
 				return EXIT_SUCCESS;
 			}
 
-			else if (strcmp(*argv,"ana")){
-				*argv = *(argv+1);
+			else if (strcmp(*argv,"ana")==0){
+				printf("%s\n",*argv );
+				argv++;
+				printf("%s\n%s\n",*argv,"this" );
 				DIR* dir = opendir(*argv);
 				if (dir)
 				{
@@ -86,7 +88,7 @@ int validateargs(int argc, char** argv){
 			}
 
 			else if (strcmp(*argv,"stats")){
-				*argv = *(argv+1);
+				argv++;
 				DIR* dir = opendir(*argv);
 				if (dir)
 				{
@@ -113,5 +115,19 @@ int validateargs(int argc, char** argv){
 	return -1;
 }
 
+// counting number of files 
+int nfiles(char* dir){
+	int number_of_files = 0;
+	DIR * directory;
+	struct dirent * entrance;
 
-
+	directory = opendir(dir); 
+	while ((entrance = readdir(directory)) != NULL) {
+    	// Checking if it is a file 
+    	if (entrance->d_type == DT_REG) { 
+         number_of_files++;
+    	}
+	}
+	closedir(directory);
+	return number_of_files;
+}
