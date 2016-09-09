@@ -126,6 +126,10 @@ int nfiles(char* dir){
     	// Checking if it is a file 
     	if (entrance->d_type == DT_REG) { 
          number_of_files++;
+         char relativepath[100];
+         strcpy(relativepath,dir); 
+		 strcat(relativepath,entrance->d_name);
+         printf("%s\n",relativepath);
     	}
 	}
 	closedir(directory);
@@ -133,6 +137,18 @@ int nfiles(char* dir){
 }
 
 int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, char* fn)){
+
+	DIR * directory;
+	struct dirent * entrance;
+
+	directory = opendir(dir); 
+	while ((entrance = readdir(directory)) != NULL) {
+    	// Checking if it is a file 
+    	if (entrance->d_type == DT_REG) { 
+        printf("%s\n",entrance->d_name );
+    	}
+	}
+	closedir(directory);
 
 return 0;
 }
