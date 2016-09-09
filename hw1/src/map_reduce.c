@@ -131,3 +131,8 @@ int nfiles(char* dir){
 	closedir(directory);
 	return number_of_files;
 }
+
+int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, char* fn)){
+
+return 0;
+}
