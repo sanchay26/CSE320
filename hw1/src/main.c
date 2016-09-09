@@ -25,9 +25,8 @@ int cat(FILE* f, void* res, char* filename) {
 
 int main(int argc, char** argv) {
     int choice = validateargs(argc,argv);
-    printf("%d\n", choice);
-    printf("Welcome to CSE 320!\n");
-    int number_of_files = nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_heavy");
-    printf("%d\n",number_of_files);
+    printf("choice%d\n", choice);
+    int number_of_files = nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light");
+    printf("number of files%d\n",number_of_files);
     return EXIT_SUCCESS;
 }

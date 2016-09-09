@@ -126,10 +126,28 @@ int nfiles(char* dir){
     	// Checking if it is a file 
     	if (entrance->d_type == DT_REG) { 
          number_of_files++;
-         char relativepath[100];
-         strcpy(relativepath,dir); 
+         // realative path to be copied inside map
+         char relativepath[strlen(dir)+strlen(entrance->d_name)+1];
+
+         strcpy(relativepath,dir);
+         strcat(relativepath,"/"); 
 		 strcat(relativepath,entrance->d_name);
-         printf("%s\n",relativepath);
+         printf("Sanchay%s\n",relativepath);
+         char *filepath = relativepath;
+         printf("%s\n",filepath);
+         FILE * fp;
+		 fp = fopen (filepath, "r");
+		 while(1)
+   		{
+	   		char c ;
+	      	c = fgetc(fp);
+	      	if( feof(fp) )
+	      	{ 
+	         break ;
+	      	}
+	      	printf("%c", c);
+   		}
+   		fclose(fp);
     	}
 	}
 	closedir(directory);
