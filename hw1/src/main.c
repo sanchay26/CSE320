@@ -27,6 +27,8 @@ int main(int argc, char** argv) {
     int choice = validateargs(argc,argv);
     printf("choice%d\n", choice);
     int number_of_files = nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light");
+    int r = map("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light",analysis_space,sizeof(struct Analysis),cat);
+    printf("%d\n",r );
     printf("number of files%d\n",number_of_files);
     return EXIT_SUCCESS;
 }

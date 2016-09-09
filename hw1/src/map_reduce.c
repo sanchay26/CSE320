@@ -127,27 +127,26 @@ int nfiles(char* dir){
     	if (entrance->d_type == DT_REG) { 
          number_of_files++;
          // realative path to be copied inside map
-         char relativepath[strlen(dir)+strlen(entrance->d_name)+1];
-
-         strcpy(relativepath,dir);
-         strcat(relativepath,"/"); 
-		 strcat(relativepath,entrance->d_name);
-         printf("Sanchay%s\n",relativepath);
-         char *filepath = relativepath;
-         printf("%s\n",filepath);
-         FILE * fp;
-		 fp = fopen (filepath, "r");
-		 while(1)
-   		{
-	   		char c ;
-	      	c = fgetc(fp);
-	      	if( feof(fp) )
-	      	{ 
-	         break ;
-	      	}
-	      	printf("%c", c);
-   		}
-   		fclose(fp);
+   //       char relativepath[strlen(dir)+strlen(entrance->d_name)+1];
+		 // strcpy(relativepath,dir);
+   //       strcat(relativepath,"/"); 
+		 // strcat(relativepath,entrance->d_name);
+   //       printf("Sanchay%s\n",relativepath);
+   //       char *filepath = relativepath;
+   //       printf("%s\n",filepath);
+   //       FILE * fp;
+		 // fp = fopen (filepath, "r");
+		 // while(1)
+   // 		{
+	  //  		char c ;
+	  //     	c = fgetc(fp);
+	  //     	if( feof(fp) )
+	  //     	{ 
+	  //        break ;
+	  //     	}
+	  //     	printf("%c", c);
+   // 		}
+   // 		fclose(fp);
     	}
 	}
 	closedir(directory);
@@ -163,7 +162,30 @@ int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, ch
 	while ((entrance = readdir(directory)) != NULL) {
     	// Checking if it is a file 
     	if (entrance->d_type == DT_REG) { 
-        printf("%s\n",entrance->d_name );
+         char relativepath[strlen(dir)+strlen(entrance->d_name)+1];
+		 strcpy(relativepath,dir);
+         strcat(relativepath,"/"); 
+		 strcat(relativepath,entrance->d_name);
+         printf("Sanchay%s\n",relativepath);
+         char *filepath = relativepath;
+         printf("%s\n",filepath);
+         void *res;
+         res=results;
+         FILE * fp;
+		 fp = fopen (filepath, "r");
+		 int g=act(fp,res, entrance->d_name);
+		 printf("%d\n",g);
+		 while(1)
+   		{
+	   		char c ;
+	      	c = fgetc(fp);
+	      	if( feof(fp) )
+	      	{ 
+	         break ;
+	      	}
+	      	printf("%c", c);
+   		}
+   		fclose(fp);
     	}
 	}
 	closedir(directory);
