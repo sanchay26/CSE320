@@ -181,10 +181,17 @@ int analysis(FILE* f, void* res, char* filename){
     int longest_line_length = 0;
     int longest_line_number = 0;
     int total_bytes = 0;
-    int ascii_code=0;
+    int ascii_array[128];
+    for(int i=0;i<128;i++){
+		ascii_array[i]=0;
+	}
+
+
+
     while((c = fgetc(f)) != EOF) {
-    	ascii_code = (int)c;
-    	printf("%d\n",ascii_code );
+    	//ascii_array = (int)c;
+    	//printf("%d\n",ascii_code );
+    	ascii_array[(int)c]++;
     	total_bytes = total_bytes + sizeof(c);
         if(c =='\n'){
         	if(longest_line_length < n){
@@ -199,11 +206,19 @@ int analysis(FILE* f, void* res, char* filename){
     		n++;
     	}
     }
+
+
     printf("File: %s\n", filename);
     printf("Longest line lenght: %d\n",longest_line_length);
     printf("longest line number: %d\n",longest_line_number);
     printf("total bytes in file %d\n", total_bytes);
     struct Analysis *pointer=(struct Analysis*)res;
+    
+    //Saving part 
+    for(int i=0;i<128;i++){
+		pointer->ascii[i]=ascii_array[i];
+		//printf("%d\n",pointer->ascii[i] );
+		}
     pointer->lnlen= longest_line_length;
     pointer->lnno= longest_line_number;
   	pointer->filename=filename; 
@@ -270,9 +285,9 @@ int stats(FILE* f, void* res, char* filename){
 	printf("%d\n",pointer->sum);
 	printf("%d\n",pointer->n);
 	printf("%s\n",pointer->filename);
-	for(int i=0;i<NVAL;i++){
-		printf("%d\n",pointer->histogram[i] );
-	}
+	// for(int i=0;i<NVAL;i++){
+	// 	printf("%d\n",pointer->histogram[i] );
+	// }
 	
 	return 0;;
 }
