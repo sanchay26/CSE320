@@ -230,22 +230,22 @@ float mean(int total, int count){
 	float m =((float)total)/((float)count);
 	return m ; 
 }
-int sort(FILE* f, int count){
-	//printf("sort called\n" );
-	int c;
-    int n = 0;
-    int array[count];
-    while((fscanf(f,"%d",&c)) != EOF){
-        array[n]=c;
-        n++;
-    }
-    for(int i=0;i<n;i++){
-    	printf("Array%d\n",array[i]);
-    }
-    printf("\n");
-    return n;
-return 0;
-}
+// int sort(FILE* f, int count){
+// 	//printf("sort called\n" );
+// 	int c;
+//     int n = 0;
+//     int array[count];
+//     while((fscanf(f,"%d",&c)) != EOF){
+//         array[n]=c;
+//         n++;
+//     }
+//     for(int i=0;i<n;i++){
+//     	printf("Array%d\n",array[i]);
+//     }
+//     printf("\n");
+//     return n;
+// return 0;
+// }
 
 int stats(FILE* f, void* res, char* filename){
 	int c;
@@ -292,5 +292,67 @@ int stats(FILE* f, void* res, char* filename){
 	return 0;;
 }
 
+//Analysis reduce function defination 
+
+struct Analysis analysis_reduce(int n, void* results){
+	
+	struct Analysis total;
+	total.lnlen=0;
+	total.lnno=0;
+	for(int i=0;i<128;i++){
+	total.ascii[i]=0;	
+	}
+	
+	//total.filename = '\0';
+	struct Analysis *temp=(struct Analysis*)results;
+	for(int i=0;i<n;i++){
+		for(int j=0;j<128;j++){
+			total.ascii[j]=total.ascii[j]+temp->ascii[j];
+		}
+		if(temp->lnlen > total.lnlen) {
+			total.lnlen = temp->lnlen;
+			total.lnno = temp->lnno;
+			total.filename = temp->filename;
+		} 
+		temp++;
+	}
 
 
+	//just for testing purposes 
+	for(int i=0;i<128;i++){
+		printf("ascii%d\n",total.ascii[i] );
+		printf("%d\n",i );
+	}
+	printf("************longest length*****%d\n",total.lnlen );
+	printf("************longest line number*****%d\n",total.lnno );
+	printf("************longest filename*****%s\n",total.filename );
+	return total; 
+}
+
+//Stats funtion defination 
+Stats stats_reduce(int n, void* results){
+	struct Stats total;
+	total.sum=0;
+	total.n=0;
+	total.filename=NULL;
+	for(int i=0;i< NVAL;i++){
+	total.histogram[i]=0;	
+	}
+
+	struct Stats *temp=(struct Stats*)results;
+	for(int j=0;j<n;j++){
+		total.sum = total.sum + temp->sum;
+		total.n = total.n + temp->n;
+		for(int i=0;i< NVAL;i++){
+		total.histogram[i]=total.histogram[i]+temp->histogram[i];	
+		}
+		temp++;
+	}
+	printf("*********total Sum********%d\n",total.sum);
+	printf("***********total count********%d\n",total.n);
+	for(int i=0;i<NVAL;i++){
+		printf("***hist***%d\n",total.histogram[i]);
+		printf("%d\n",i);
+	}
+return total;
+}
