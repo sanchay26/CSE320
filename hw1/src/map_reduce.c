@@ -126,28 +126,7 @@ int nfiles(char* dir){
     	// Checking if it is a file 
     	if (entrance->d_type == DT_REG) { 
          number_of_files++;
-         // realative path to be copied inside map
-   //       char relativepath[strlen(dir)+strlen(entrance->d_name)+1];
-		 // strcpy(relativepath,dir);
-   //       strcat(relativepath,"/"); 
-		 // strcat(relativepath,entrance->d_name);
-   //       printf("Sanchay%s\n",relativepath);
-   //       char *filepath = relativepath;
-   //       printf("%s\n",filepath);
-   //       FILE * fp;
-		 // fp = fopen (filepath, "r");
-		 // while(1)
-   // 		{
-	  //  		char c ;
-	  //     	c = fgetc(fp);
-	  //     	if( feof(fp) )
-	  //     	{ 
-	  //        break ;
-	  //     	}
-	  //     	printf("%c", c);
-   // 		}
-   // 		fclose(fp);
-    	}
+        }
 	}
 	closedir(directory);
 	return number_of_files;
@@ -159,6 +138,8 @@ int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, ch
 	struct dirent * entrance;
 
 	directory = opendir(dir); 
+	void *res;
+    res=results;
 	while ((entrance = readdir(directory)) != NULL) {
     	// Checking if it is a file 
     	if (entrance->d_type == DT_REG) { 
@@ -168,27 +149,68 @@ int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, ch
 		 strcat(relativepath,entrance->d_name);
          printf("Sanchay%s\n",relativepath);
          char *filepath = relativepath;
+         //Check if it is correct 
+         char *duplicatefilepath = strdup(entrance->d_name);
+         printf("%s\n",duplicatefilepath);
          printf("%s\n",filepath);
-         void *res;
-         res=results;
+         
          FILE * fp;
 		 fp = fopen (filepath, "r");
-		 int g=act(fp,res, entrance->d_name);
+		 int g=act(fp,res, duplicatefilepath);
 		 printf("%d\n",g);
-		 while(1)
-   		{
-	   		char c ;
-	      	c = fgetc(fp);
-	      	if( feof(fp) )
-	      	{ 
-	         break ;
-	      	}
-	      	printf("%c", c);
-   		}
-   		fclose(fp);
+		 fclose(fp);
+		 res = res + size;
+		 //results = results + size;
     	}
 	}
 	closedir(directory);
-
 return 0;
+}
+
+
+//Analysis Function
+
+int analysis(FILE* f, void* res, char* filename){
+	char c;
+	int n=0;
+	int line_number = 1;
+    int longest_line = 0;
+    int longest_line_number = 0;
+    int total_bytes = 0;
+    while((c = fgetc(f)) != EOF) {
+    	total_bytes = total_bytes + sizeof(c);
+        if(c =='\n'){
+        	if(longest_line < n){
+        		longest_line = n;
+        		longest_line_number = line_number;
+        		}
+        		n=0;
+        		line_number++;    		
+        }
+        else if (c!='\n')
+    	{
+    		n++;
+    	}
+    }
+    printf("File: %s\n", filename);
+    printf("Longest line lenght: %d\n",longest_line);
+    printf("longest line number: %d\n",longest_line_number);
+    printf("total bytes in file %d\n", total_bytes);
+
+    return n;
+}
+
+int stats(FILE* f, void* res, char* filename){
+	int c;
+	int count=0;
+	while((c = fgetc(f)) != EOF){
+		if(c>-1 && c<33){
+			count=count+c;
+		}
+		else{
+			return -1;
+		}
+	}
+	printf("Count: %d\n",count);
+	return 0;;
 }
