@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include "../include/const.h"
 
 //Space to store the results for analysis map
 struct Analysis analysis_space[NFILES];

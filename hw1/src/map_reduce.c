@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include "../include/const.h"
 //Implement map_reduce.h functions here.
 // Help Menu Print Funtion 
 int help(){
@@ -138,6 +141,7 @@ int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, ch
 	struct dirent * entrance;
 
 	directory = opendir(dir); 
+	memset(results,'\0',NFILES*size);
 	void *res;
     res=results;
 	while ((entrance = readdir(directory)) != NULL) {
@@ -211,20 +215,42 @@ float mean(int total, int count){
 	float m =((float)total)/((float)count);
 	return m ; 
 }
+int sort(FILE* f, int count){
+	//printf("sort called\n" );
+	int c;
+    int n = 0;
+    int array[count];
+    while((fscanf(f,"%d",&c)) != EOF){
+        array[n]=c;
+        n++;
+    }
+    for(int i=0;i<n;i++){
+    	printf("Array%d\n",array[i]);
+    }
+    printf("\n");
+    return n;
+return 0;
+}
 
 int stats(FILE* f, void* res, char* filename){
 	int c;
 	int count=0;
 	int total = 0;
-	int min;
-	int max;
+	int min=0;
+	int max=0;
 	float average;
+	int array[NVAL];
 	
+	//intializing array to zero
+	for(int i=0;i<NVAL;i++){
+		array[i]=0;
+	}
+
 	while((fscanf(f,"%d",&c)) != EOF){
+		//printf("%d\n",c );
+		array[c]++;
 		count=count+1;
 		total=total+c;
-		min=0;
-        max=0;
 		if(c>max)
            max=c;
         if(c<min)
@@ -232,9 +258,21 @@ int stats(FILE* f, void* res, char* filename){
 	}
 	average = mean(total,count);
 	printf("Mean %f\n", average);
-	printf("minimum:%d\n",min );
-	printf("maximum:%d\n",max );
-	printf("%d\n",count );
+	//printf("minimum:%d\n",min );
+	//printf("maximum:%d\n",max );
+	struct Stats *pointer=(struct Stats*)res;
+	pointer->sum=total;
+	pointer->n=count;
+	pointer->filename=filename;
+	for(int i=0;i<NVAL;i++){
+		pointer->histogram[i]=array[i];
+	}
+	printf("%d\n",pointer->sum);
+	printf("%d\n",pointer->n);
+	printf("%s\n",pointer->filename);
+	for(int i=0;i<NVAL;i++){
+		printf("%d\n",pointer->histogram[i] );
+	}
 	
 	return 0;;
 }
