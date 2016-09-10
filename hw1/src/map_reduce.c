@@ -174,14 +174,17 @@ int analysis(FILE* f, void* res, char* filename){
 	char c;
 	int n=0;
 	int line_number = 1;
-    int longest_line = 0;
+    int longest_line_length = 0;
     int longest_line_number = 0;
     int total_bytes = 0;
+    int ascii_code=0;
     while((c = fgetc(f)) != EOF) {
+    	ascii_code = (int)c;
+    	printf("%d\n",ascii_code );
     	total_bytes = total_bytes + sizeof(c);
         if(c =='\n'){
-        	if(longest_line < n){
-        		longest_line = n;
+        	if(longest_line_length < n){
+        		longest_line_length = n;
         		longest_line_number = line_number;
         		}
         		n=0;
@@ -193,24 +196,48 @@ int analysis(FILE* f, void* res, char* filename){
     	}
     }
     printf("File: %s\n", filename);
-    printf("Longest line lenght: %d\n",longest_line);
+    printf("Longest line lenght: %d\n",longest_line_length);
     printf("longest line number: %d\n",longest_line_number);
     printf("total bytes in file %d\n", total_bytes);
+    struct Analysis *pointer=(struct Analysis*)res;
+    pointer->lnlen= longest_line_length;
+    pointer->lnno= longest_line_number;
+  	pointer->filename=filename; 
+    //printf("Saved filename %s\n",pointer->filename );
+	return total_bytes;
+}
 
-    return n;
+float mean(int total, int count){
+	float m =((float)total)/((float)count);
+	return m ; 
 }
 
 int stats(FILE* f, void* res, char* filename){
 	int c;
 	int count=0;
-	while((c = fgetc(f)) != EOF){
-		if(c>-1 && c<33){
-			count=count+c;
-		}
-		else{
-			return -1;
-		}
+	int total = 0;
+	int min;
+	int max;
+	float average;
+	
+	while((fscanf(f,"%d",&c)) != EOF){
+		count=count+1;
+		total=total+c;
+		min=0;
+        max=0;
+		if(c>max)
+           max=c;
+        if(c<min)
+           min=c;
 	}
-	printf("Count: %d\n",count);
+	average = mean(total,count);
+	printf("Mean %f\n", average);
+	printf("minimum:%d\n",min );
+	printf("maximum:%d\n",max );
+	printf("%d\n",count );
+	
 	return 0;;
 }
+
+
+
