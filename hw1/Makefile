@@ -6,8 +6,18 @@
 # introduction doc, if it doesn't you will get a ZERO!
 CFLAGS = -Wall -Werror
 
-all:
-	gcc $(CFLAGS) ./src/map_reduce.c ./src/main.c -o mapreduce
+
+all:clean gcc1 makefolder 
+	@mkdir -p bin
+	gcc -g -o bin/mapreduce build/main.o build/map_reduce.o 
+
+gcc1:	
+	@mkdir -p build
+	gcc $(CFLAGS) -c ./src/main.c -o build/main.o
+
+makefolder:
+	@mkdir -p build
+	gcc $(CFLAGS) -c ./src/map_reduce.c -o build/map_reduce.o
 
 clean:
 	rm -f *.o map_reduce

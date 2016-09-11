@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
         int hist = 1;
         int map_return = map(*argv,analysis_space,sizeof(struct Analysis),funcp);
         struct Analysis final = analysis_reduce(nfiles(*argv), analysis_space);
-        printf("%d\n",map_return );
+       // printf("%d\n",map_return );
         // for(int i=0;i<nfiles(*argv);i++){
         // analysis_print(analysis_space[i],map_return,0);    
         // }

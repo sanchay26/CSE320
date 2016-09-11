@@ -36,7 +36,6 @@ int validateargs(int argc, char** argv){
 	
 	else if(argc == 2){
 		//validating first argument 
-		if (strcmp("./mapreduce",*argv) == 0){
 			
 			argv++;
 
@@ -50,20 +49,9 @@ int validateargs(int argc, char** argv){
 				help();
 				return -1;
 			}
-		}
-		else{
-			//if first argument is not a ./mapreduce
-			//printf("%s\n","Invalid Arguments");
-			help();
-			return -1;
-			 
-		}
-
 	}
 	else if (argc == 3){
 
-		if(strcmp(*argv,"./mapreduce")==0){
-			
 			argv++;
 			
 			if(strcmp(*argv,"-h")==0){
@@ -113,10 +101,9 @@ int validateargs(int argc, char** argv){
 				help();
 				return -1;
 			}
-		}
 	}
+	
 	else if(argc==4){
-			if(strcmp(*argv,"./mapreduce")==0){
 			argv++;
 			
 			if(strcmp(*argv,"-h")==0){
@@ -176,13 +163,7 @@ int validateargs(int argc, char** argv){
 				return -1;
 			}
 		}
-		else {
-			//Map reduce wasn't first argument 
-			printf("%s\n","Invalid Arguments");
-			return -1;
-		}
-	}
-
+		
 	else {
 		argv++;
 		if(strcmp(*argv,"-h")==0){
