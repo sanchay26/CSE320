@@ -481,18 +481,27 @@ void stats_print(Stats res, int hist){
 	int min=NVAL;
 	int max=-1;
 	int largest= -1;
-	//int count= res.n;
-	//int index;
+	int count= res.n;
+	int index=0;
 	//int median;
-
-	// for(int i=0;i<NVAL;i++){
-	// 	if(count % 2!=0){
-	// 		median = 
-	// 	}
-	// }
-	// if(count % 2 !=0){
-	// 	index=(count+1)/2;	
-	// }
+	int fullarray[count];
+	for(int i=0;i<NVAL;i++){
+		if(res.histogram[i]!=0){
+			for(int j=0;j<res.histogram[i];j++){
+			fullarray[index]=i;
+			index++;
+			}
+		}
+	}
+	
+	if(count%2!=0){
+		int place=(count+1)/2;
+		printf("Median%f\n",(float)fullarray[place] );
+	}
+	else{
+		int place=(count+1)/2;
+		printf("Median%f\n", (float)(fullarray[place]+fullarray[place-1])/(float)2);
+	}
 
 	//int mode;
 	for(int i=0;i<NVAL;i++){
