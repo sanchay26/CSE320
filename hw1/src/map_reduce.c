@@ -72,9 +72,9 @@ int validateargs(int argc, char** argv){
 			}
 
 			else if (strcmp(*argv,"ana")==0){
-				printf("%s\n",*argv );
+				//printf("%s\n",*argv );
 				argv++;
-				printf("%s\n%s\n",*argv,"this" );
+				//printf("%s\n%s\n",*argv,"this" );
 				DIR* dir = opendir(*argv);
 				if (dir)
 				{
@@ -144,6 +144,7 @@ int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, ch
 	memset(results,'\0',NFILES*size);
 	void *res;
     res=results;
+    int g;
 	while ((entrance = readdir(directory)) != NULL) {
     	// Checking if it is a file 
     	if (entrance->d_type == DT_REG) { 
@@ -151,24 +152,21 @@ int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, ch
 		 strcpy(relativepath,dir);
          strcat(relativepath,"/"); 
 		 strcat(relativepath,entrance->d_name);
-         printf("Sanchay%s\n",relativepath);
+         //printf("Sanchay%s\n",relativepath);
          char *filepath = relativepath;
          //Check if it is correct 
          char *duplicatefilepath = strdup(entrance->d_name);
-         printf("%s\n",duplicatefilepath);
-         printf("%s\n",filepath);
-         
+         //printf("%s\n",duplicatefilepath);
+         //printf("%s\n",filepath);
          FILE * fp;
 		 fp = fopen (filepath, "r");
-		 int g=act(fp,res, duplicatefilepath);
-		 printf("%d\n",g);
+		 g=g+act(fp,res, duplicatefilepath);
 		 fclose(fp);
 		 res = res + size;
-		 //results = results + size;
-    	}
+		}
 	}
 	closedir(directory);
-return 0;
+return g;
 }
 
 
@@ -206,12 +204,10 @@ int analysis(FILE* f, void* res, char* filename){
     		n++;
     	}
     }
-
-
-    printf("File: %s\n", filename);
-    printf("Longest line lenght: %d\n",longest_line_length);
-    printf("longest line number: %d\n",longest_line_number);
-    printf("total bytes in file %d\n", total_bytes);
+	// printf("File: %s\n", filename);
+    // printf("Longest line lenght: %d\n",longest_line_length);
+    // printf("longest line number: %d\n",longest_line_number);
+    // printf("total bytes in file %d\n", total_bytes);
     struct Analysis *pointer=(struct Analysis*)res;
     
     //Saving part 
@@ -253,7 +249,7 @@ int stats(FILE* f, void* res, char* filename){
 	int total = 0;
 	int min=0;
 	int max=0;
-	float average;
+	//float average;
 	int array[NVAL];
 	
 	//intializing array to zero
@@ -271,8 +267,8 @@ int stats(FILE* f, void* res, char* filename){
         if(c<min)
            min=c;
 	}
-	average = mean(total,count);
-	printf("Mean %f\n", average);
+	//average = mean(total,count);
+	//printf("Mean %f\n", average);
 	//printf("minimum:%d\n",min );
 	//printf("maximum:%d\n",max );
 	struct Stats *pointer=(struct Stats*)res;
@@ -282,9 +278,10 @@ int stats(FILE* f, void* res, char* filename){
 	for(int i=0;i<NVAL;i++){
 		pointer->histogram[i]=array[i];
 	}
-	printf("%d\n",pointer->sum);
-	printf("%d\n",pointer->n);
-	printf("%s\n",pointer->filename);
+	//testing stuff
+	//printf("%d\n",pointer->sum);
+	//printf("%d\n",pointer->n);
+	//printf("%s\n",pointer->filename);
 	// for(int i=0;i<NVAL;i++){
 	// 	printf("%d\n",pointer->histogram[i] );
 	// }
@@ -316,16 +313,14 @@ struct Analysis analysis_reduce(int n, void* results){
 		} 
 		temp++;
 	}
-
-
 	//just for testing purposes 
-	for(int i=0;i<128;i++){
-		printf("ascii%d\n",total.ascii[i] );
-		printf("%d\n",i );
-	}
-	printf("************longest length*****%d\n",total.lnlen );
-	printf("************longest line number*****%d\n",total.lnno );
-	printf("************longest filename*****%s\n",total.filename );
+	// for(int i=0;i<128;i++){
+	// 	printf("ascii%d\n",total.ascii[i] );
+	// 	printf("%d\n",i );
+	// }
+	// printf("************longest length*****%d\n",total.lnlen );
+	// printf("************longest line number*****%d\n",total.lnno );
+	// printf("************longest filename*****%s\n",total.filename );
 	return total; 
 }
 
@@ -348,11 +343,34 @@ Stats stats_reduce(int n, void* results){
 		}
 		temp++;
 	}
-	printf("*********total Sum********%d\n",total.sum);
-	printf("***********total count********%d\n",total.n);
-	for(int i=0;i<NVAL;i++){
-		printf("***hist***%d\n",total.histogram[i]);
-		printf("%d\n",i);
-	}
+	//Printing stuff
+	// printf("*********total Sum********%d\n",total.sum);
+	// printf("***********total count********%d\n",total.n);
+	// for(int i=0;i<NVAL;i++){
+	// 	printf("***hist***%d\n",total.histogram[i]);
+	// 	printf("%d\n",i);
+	// }
 return total;
+}
+
+//Analysis print function defination 
+
+void analysis_print(struct Analysis res, int nbytes, int hist){
+	if(hist!=0){
+		for(int i=0;i<128;i++){
+			if(res.ascii[i]!=0){
+				printf("%d:",i);
+				for (int j = 0; j < res.ascii[i]; j++)
+				{
+					printf("-");
+				}
+				printf("\n");
+			}
+		}
+
+	}
+	printf("File: %s\n",res.filename);
+	printf("Longest line length: %d\n",res.lnlen);
+	printf("Longest line number: %d\n",res.lnno );
+	printf("Total Bytes in directory: %d\n",nbytes );
 }

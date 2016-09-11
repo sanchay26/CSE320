@@ -28,11 +28,21 @@ int main(int argc, char** argv) {
     int choice = validateargs(argc,argv);
     printf("choice%d\n", choice);
     //int number_of_files = nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light");
-    int r = map("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/stats_light",stats_space,sizeof(struct Stats),stats);
-    if(r==0){
-        stats_reduce(nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/stats_light"), stats_space);
-    }
+    
+    //For Stats 
+    // int r = map("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/stats_light",stats_space,sizeof(struct Stats),stats);
+    // if(r==0){
+    //     stats_reduce(nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/stats_light"), stats_space);
+    // }
 
+    //For Analysis 
+    int (*funcp)(FILE*,void*,char*);
+    funcp = analysis;
+    int hist = 1;
+    int map_return = map("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light",analysis_space,sizeof(struct Analysis),funcp);
+    //printf("********number of bytes****%d\n",map_return );
+    struct Analysis final = analysis_reduce(nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light"), analysis_space);
+    analysis_print(final, map_return, hist);
     //printf("%d\n",r );
     //printf("number of files%d\n",number_of_files);
     return EXIT_SUCCESS;
