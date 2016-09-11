@@ -45,7 +45,6 @@ int main(int argc, char** argv) {
     }
     
     if(choice==2){
-        
         argv++;
         argv++;
         //int number_of_files = nfiles(*argv);

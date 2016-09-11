@@ -362,7 +362,6 @@ struct Analysis analysis_reduce(int n, void* results){
 	total.ascii[i]=0;	
 	}
 	
-	//total.filename = '\0';
 	struct Analysis *temp=(struct Analysis*)results;
 	for(int i=0;i<n;i++){
 		for(int j=0;j<128;j++){
@@ -375,14 +374,6 @@ struct Analysis analysis_reduce(int n, void* results){
 		} 
 		temp++;
 	}
-	//just for testing purposes 
-	// for(int i=0;i<128;i++){
-	// 	printf("ascii%d\n",total.ascii[i] );
-	// 	printf("%d\n",i );
-	// }
-	// printf("************longest length*****%d\n",total.lnlen );
-	// printf("************longest line number*****%d\n",total.lnno );
-	// printf("************longest filename*****%s\n",total.filename );
 	return total; 
 }
 
@@ -483,6 +474,8 @@ void stats_print(Stats res, int hist){
 	int largest= -1;
 	int count= res.n;
 	int index=0;
+	//int q1;
+	//int q3;
 	//int median;
 	int fullarray[count];
 	for(int i=0;i<NVAL;i++){
@@ -502,6 +495,32 @@ void stats_print(Stats res, int hist){
 		int place=(count+1)/2;
 		printf("Median%f\n", (float)(fullarray[place]+fullarray[place-1])/(float)2);
 	}
+
+	 //count*0.25;
+	float random1 = count*0.25;
+	if(random1-(int)random1==0){
+		printf("its an integer ");
+		int r = (int)random1;
+		printf("Q1%f\n",(float)(fullarray[r]+fullarray[r+1])/(float)2);
+	}
+	else{
+		//printf("its an float");
+		int r= (int)random1+1;
+		printf("Q1%d\n",fullarray[r]);
+	}
+
+	float random2 = count*0.75;
+	if(random2-(int)random2==0){
+		printf("its an integer ");
+		int r = (int)random2;
+		printf("Q3%f\n",(float)(fullarray[r]+fullarray[r+1])/(float)2);
+	}
+	else{
+		//printf("its an float");
+		int r= (int)random2+1;
+		printf("Q3%d\n",fullarray[r]);
+	}
+
 
 	//int mode;
 	for(int i=0;i<NVAL;i++){
