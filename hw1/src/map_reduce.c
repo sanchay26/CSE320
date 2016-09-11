@@ -10,18 +10,18 @@
 //Implement map_reduce.h functions here.
 // Help Menu Print Funtion 
 int help(){
-printf("%s\n", "Usage: ./mapreduce [h|v] FUNC DIR");
-printf("%s\n","FUNC");
-printf("%s\n","Which operation you would like to run on the data:");
-printf("%s\n","ana - Analysis of various text files in a directory.");
-printf("%s\n","stats - Calculates stats on files which contain only numbers.");
-printf("%s\n","DIR");
-printf("%s\n","The directory in which the files are located.");
-printf("%s\n","Options:");
-printf("%s\n","-h");
-printf("%s\n","Prints this help menu.");
-printf("%s\n","-v");
-printf("%s\n","Prints the map function’s results, stating the file it’s from.");
+printf("%s\n\t", "Usage: ./mapreduce [h|v] FUNC DIR");
+printf("%s\t","FUNC");
+printf("%s\n\t\t","Which operation you would like to run on the data:");
+printf("%s\n\t\t","ana - Analysis of various text files in a directory.");
+printf("%s\n\t","stats - Calculates stats on files which contain only numbers.");
+printf("%s\t","DIR");
+printf("%s\n\n\t","The directory in which the files are located.");
+printf("%s\n\t","Options:");
+printf("%s\t","-h");
+printf("%s\n\t","Prints this help menu.");
+printf("%s\t","-v");
+printf("%s","Prints the map function’s results, stating the file it’s from.");
 return 0;
 }
 // Validate Agrument Function Defination 
@@ -46,16 +46,17 @@ int validateargs(int argc, char** argv){
 				return EXIT_SUCCESS;
 			}
 			else {
-				//print menu here 
+				//if second argument is not -h 
 				help();
 				return -1;
-				}
+			}
 		}
 		else{
+			//if first argument is not a ./mapreduce
 			printf("%s\n","Invalid Arguments");
 			help();
 			return -1;
-			//if first argument is not a ./mapreduce 
+			 
 		}
 
 	}
@@ -74,7 +75,7 @@ int validateargs(int argc, char** argv){
 			else if (strcmp(*argv,"ana")==0){
 				//printf("%s\n",*argv );
 				argv++;
-				//printf("%s\n%s\n",*argv,"this" );
+				printf("%s\n%s\n",*argv,"this" );
 				DIR* dir = opendir(*argv);
 				if (dir)
 				{
@@ -90,7 +91,7 @@ int validateargs(int argc, char** argv){
 				}
 			}
 
-			else if (strcmp(*argv,"stats")){
+			else if (strcmp(*argv,"stats")==0){
 				argv++;
 				DIR* dir = opendir(*argv);
 				if (dir)
@@ -112,10 +113,74 @@ int validateargs(int argc, char** argv){
 			}
 		}
 	}
-	else if( argc==4){
+	else if(argc==4){
+			if(strcmp(*argv,"./map_reduce")==0){
+			argv++;
+			
+			if(strcmp(*argv,"-h")==0){
+				// print menu here 
+				help();
+				return EXIT_SUCCESS;
+			}
 
+			else if(strcmp(*argv,"-v")==0){
+				argv++;
+				
+				if (strcmp(*argv,"ana")==0){
+				//printf("%s\n",*argv );
+					argv++;
+					//printf("%s\n%s\n",*argv,"this" );
+					DIR* dir = opendir(*argv);
+					if (dir)
+					{
+	    				/* Directory exists. */
+	    				closedir(dir);
+	    				return 3;
+					}
+					else 
+					{
+						printf("%s\n","Invalid Directory");
+						return -1;
+	    			/* Directory does not exist. */
+					}
+				}
+				
+				else if (strcmp(*argv,"stats")==0){
+					printf("**************in Stats" );
+					argv++;
+					DIR* dir = opendir(*argv);
+					if (dir)
+					{
+	    				/* Directory exists. */
+	    				closedir(dir);
+	    				return 4;
+					}
+					else 
+					{
+						printf("%s\n","Invalid Directory");
+						return -1;
+	    			/* Directory does not exist. */
+					}
+				}
+				
+				else{
+					printf("this%s\n","Invalid Arguments");
+					return -1;
+				}
+
+			}
+			else {
+				printf("%s\n","Invalid Arguments");
+				return -1;
+			}
+		}
+		else {
+			//Map reduce wasn't first argument 
+			printf("%s\n","Invalid Arguments");
+			return -1;
+		}
 	}
-	return -1;
+return -1;
 }
 
 // counting number of files 
@@ -222,10 +287,7 @@ int analysis(FILE* f, void* res, char* filename){
 	return total_bytes;
 }
 
-float mean(int total, int count){
-	float m =((float)total)/((float)count);
-	return m ; 
-}
+
 // int sort(FILE* f, int count){
 // 	//printf("sort called\n" );
 // 	int c;
@@ -347,8 +409,8 @@ Stats stats_reduce(int n, void* results){
 	// printf("*********total Sum********%d\n",total.sum);
 	// printf("***********total count********%d\n",total.n);
 	// for(int i=0;i<NVAL;i++){
-	// 	printf("***hist***%d\n",total.histogram[i]);
-	// 	printf("%d\n",i);
+	// 	//printf("***hist1***%d\n",total.histogram[i]);
+	// 	//printf("%d\n",i);
 	// }
 return total;
 }
@@ -356,7 +418,13 @@ return total;
 //Analysis print function defination 
 
 void analysis_print(struct Analysis res, int nbytes, int hist){
+	
+	printf("File: %s\n",res.filename);
+	printf("Longest line length: %d\n",res.lnlen);
+	printf("Longest line number: %d\n\n\n",res.lnno );
 	if(hist!=0){
+		printf("Total Bytes in directory: %d\n",nbytes );
+		printf("Histogram:\n");
 		for(int i=0;i<128;i++){
 			if(res.ascii[i]!=0){
 				printf("%d:",i);
@@ -367,10 +435,88 @@ void analysis_print(struct Analysis res, int nbytes, int hist){
 				printf("\n");
 			}
 		}
-
 	}
-	printf("File: %s\n",res.filename);
-	printf("Longest line length: %d\n",res.lnlen);
-	printf("Longest line number: %d\n",res.lnno );
-	printf("Total Bytes in directory: %d\n",nbytes );
+}
+
+ 
+//helper function for stats mean
+
+float mean(int total, int count){
+	float m =((float)total)/((float)count);
+	return m ; 
+}
+
+// Stats Print Function
+
+
+void stats_print(Stats res, int hist){
+	
+	// for(int i =0 ; i<NVAL;i++){
+	// //printf("***hist***%d\n",res.histogram[i]);	
+	// }
+	
+	if(hist!=0){
+		printf("Histogram:\n");
+		for(int i=0;i<NVAL;i++){
+			if(res.histogram[i]!=0){
+				printf("%d :",i);
+				for (int j = 0; j < res.histogram[i]; j++)
+				{
+					printf("-");
+				}
+				printf("\n");
+			}
+		}
+	}
+	
+	if(res.filename!=NULL){
+		printf("%s\n",res.filename );
+	}
+
+	printf("Count: %d\n",res.n);
+	
+	float mean1 = mean(res.sum,res.n);
+	printf("Mean: %f\n",mean1);
+	
+	int min=NVAL;
+	int max=-1;
+	int largest= -1;
+	//int count= res.n;
+	//int index;
+	//int median;
+
+	// for(int i=0;i<NVAL;i++){
+	// 	if(count % 2!=0){
+	// 		median = 
+	// 	}
+	// }
+	// if(count % 2 !=0){
+	// 	index=(count+1)/2;	
+	// }
+
+	//int mode;
+	for(int i=0;i<NVAL;i++){
+		if(res.histogram[i]>largest){
+			largest=res.histogram[i];
+		}
+		if(res.histogram[i]!=0 && i<min){
+			min=i;
+		}
+		if(res.histogram[i]!=0 && i>max){
+			max=i;
+		}		
+	}
+	
+	printf("Mode:");
+	for(int i=0;i<NVAL;i++){
+		if(res.histogram[i]==largest){
+			printf("%d ",i);
+		}
+	}
+	printf("\n");
+
+	printf("Min: %d\n", min);
+	printf("Max:%d\n", max);
+
+	//printf("\n");
 }

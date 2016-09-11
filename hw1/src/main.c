@@ -26,23 +26,94 @@ int cat(FILE* f, void* res, char* filename) {
 
 int main(int argc, char** argv) {
     int choice = validateargs(argc,argv);
-    printf("choice%d\n", choice);
-    //int number_of_files = nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light");
+    //For Stats
+    if(choice==1){
+        
+        argv++;
+        argv++;
+        //int number_of_files = nfiles(*argv);
+        int (*funcp)(FILE*,void*,char*);
+        funcp = analysis;
+        int hist = 1;
+        int map_return = map(*argv,analysis_space,sizeof(struct Analysis),funcp);
+        struct Analysis final = analysis_reduce(nfiles(*argv), analysis_space);
+        printf("%d\n",map_return );
+        // for(int i=0;i<nfiles(*argv);i++){
+        // analysis_print(analysis_space[i],map_return,0);    
+        // }
+        analysis_print(final, map_return, hist);
+    }
     
-    //For Stats 
-    // int r = map("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/stats_light",stats_space,sizeof(struct Stats),stats);
-    // if(r==0){
-    //     stats_reduce(nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/stats_light"), stats_space);
-    // }
+    if(choice==2){
+        
+        argv++;
+        argv++;
+        //int number_of_files = nfiles(*argv);
+        int (*funcp)(FILE*,void*,char*);
+        funcp = stats;
+        int hist = 1;
+        int map_return = map(*argv,stats_space,sizeof(struct Stats),funcp);
+        struct Stats final =  stats_reduce(nfiles(*argv), stats_space);
+        printf("%d\n",map_return );
+        stats_print(final, hist);
+    }
+    
+    if(choice==3){
+        
+        argv++;
+        argv++;
+        argv++;
+        //int number_of_files = nfiles(*argv);
+        int (*funcp)(FILE*,void*,char*);
+        funcp = analysis;
+        int hist = 1;
+        int map_return = map(*argv,analysis_space,sizeof(struct Analysis),funcp);
+        struct Analysis final = analysis_reduce(nfiles(*argv), analysis_space);
+        printf("%d\n",map_return );
+        for(int i=0;i<nfiles(*argv);i++){
+        analysis_print(analysis_space[i],map_return,0);    
+        }
+        analysis_print(final, map_return, hist);
+    }
+
+    else if(choice==4){
+        argv++;
+        argv++;
+        argv++;
+        int (*funcp)(FILE*,void*,char*);
+        funcp = stats;
+        int hist = 1;
+        int map_return = map(*argv,stats_space,sizeof(struct Stats),funcp);
+        struct Stats final =  stats_reduce(nfiles(*argv), stats_space);
+        printf("%d\n",map_return );
+        stats_print(final, hist);
+        for(int i=0;i<nfiles(*argv);i++){
+             stats_print(stats_space[i],0);    
+        }
+    }
+    
 
     //For Analysis 
-    int (*funcp)(FILE*,void*,char*);
-    funcp = analysis;
-    int hist = 1;
-    int map_return = map("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light",analysis_space,sizeof(struct Analysis),funcp);
+    //int (*funcp)(FILE*,void*,char*);
+    //funcp = analysis;
+    //int hist = 1;
+    //int map_return = map("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light",analysis_space,sizeof(struct Analysis),funcp);
     //printf("********number of bytes****%d\n",map_return );
-    struct Analysis final = analysis_reduce(nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light"), analysis_space);
-    analysis_print(final, map_return, hist);
+    //struct Analysis final = analysis_reduce(nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light"), analysis_space);
+    // for(int i=0;i<number_of_files;i++){
+    // analysis_print(analysis_space[i],map_return,0);    
+    // }
+    // analysis_print(final, map_return, hist);
+    
+
+    // For Stats   
+    // for(int i=0;i<number_of_files;i++){
+    // stats_print(stats_space[i],hist);    
+    // }
+    
+
+
+
     //printf("%d\n",r );
     //printf("number of files%d\n",number_of_files);
     return EXIT_SUCCESS;
