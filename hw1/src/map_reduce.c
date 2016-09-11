@@ -21,7 +21,7 @@ printf("%s\n\t","Options:");
 printf("%s\t","-h");
 printf("%s\n\t","Prints this help menu.");
 printf("%s\t","-v");
-printf("%s","Prints the map function’s results, stating the file it’s from.");
+printf("%s\n","Prints the map function’s results, stating the file it’s from.");
 return 0;
 }
 // Validate Agrument Function Defination 
@@ -29,14 +29,14 @@ int validateargs(int argc, char** argv){
 	
 	// Invalidate Arguments 0 or 1 Argument 
 	if (argc < 2){
-	printf("%s\n","Invalid Arguments");
+	//printf("%s\n","Invalid Arguments");
 	help();
 	return -1;
 	}
 	
 	else if(argc == 2){
 		//validating first argument 
-		if (strcmp("./map_reduce",*argv) == 0){
+		if (strcmp("./mapreduce",*argv) == 0){
 			
 			argv++;
 
@@ -53,7 +53,7 @@ int validateargs(int argc, char** argv){
 		}
 		else{
 			//if first argument is not a ./mapreduce
-			printf("%s\n","Invalid Arguments");
+			//printf("%s\n","Invalid Arguments");
 			help();
 			return -1;
 			 
@@ -62,7 +62,7 @@ int validateargs(int argc, char** argv){
 	}
 	else if (argc == 3){
 
-		if(strcmp(*argv,"./map_reduce")==0){
+		if(strcmp(*argv,"./mapreduce")==0){
 			
 			argv++;
 			
@@ -75,7 +75,6 @@ int validateargs(int argc, char** argv){
 			else if (strcmp(*argv,"ana")==0){
 				//printf("%s\n",*argv );
 				argv++;
-				printf("%s\n%s\n",*argv,"this" );
 				DIR* dir = opendir(*argv);
 				if (dir)
 				{
@@ -85,8 +84,10 @@ int validateargs(int argc, char** argv){
 				}
 				else 
 				{
-					printf("%s\n","Invalid Directory");
+					//printf("%s\n","Invalid Directory");
+					help();
 					return -1;
+
     			/* Directory does not exist. */
 				}
 			}
@@ -102,19 +103,20 @@ int validateargs(int argc, char** argv){
 				}
 				else 
 				{
-					printf("%s\n","Invalid Directory");
+					help();
 					return -1;
     			/* Directory does not exist. */
 				}
 			}
 			else {
-				printf("%s\n","Invalid Arguments");
+				//printf("%s\n","Invalid Arguments");
+				help();
 				return -1;
 			}
 		}
 	}
 	else if(argc==4){
-			if(strcmp(*argv,"./map_reduce")==0){
+			if(strcmp(*argv,"./mapreduce")==0){
 			argv++;
 			
 			if(strcmp(*argv,"-h")==0){
@@ -177,6 +179,19 @@ int validateargs(int argc, char** argv){
 		else {
 			//Map reduce wasn't first argument 
 			printf("%s\n","Invalid Arguments");
+			return -1;
+		}
+	}
+
+	else {
+		argv++;
+		if(strcmp(*argv,"-h")==0){
+				// print menu here 
+				help();
+				return EXIT_SUCCESS;
+		}
+		else {
+			help();
 			return -1;
 		}
 	}
@@ -458,7 +473,7 @@ void stats_print(Stats res, int hist){
 				printf("\n");
 			}
 		}printf("\n");
-		
+
 	}
 	
 	if(res.filename!=NULL){

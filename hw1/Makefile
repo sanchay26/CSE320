@@ -7,7 +7,7 @@
 CFLAGS = -Wall -Werror
 
 all:
-	gcc $(CFLAGS) ./src/map_reduce.c ./src/main.c -o map_reduce
+	gcc $(CFLAGS) ./src/map_reduce.c ./src/main.c -o mapreduce
 
 clean:
 	rm -f *.o map_reduce

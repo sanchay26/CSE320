@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
         //int number_of_files = nfiles(*argv);
         int (*funcp)(FILE*,void*,char*);
         funcp = stats;
-        int hist = 1;
+        int hist = 0;
         int map_return = map(*argv,stats_space,sizeof(struct Stats),funcp);
         struct Stats final =  stats_reduce(nfiles(*argv), stats_space);
         printf("%d\n",map_return );
@@ -91,30 +91,5 @@ int main(int argc, char** argv) {
         stats_print(final, hist);
         
     }
-    
-
-    //For Analysis 
-    //int (*funcp)(FILE*,void*,char*);
-    //funcp = analysis;
-    //int hist = 1;
-    //int map_return = map("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light",analysis_space,sizeof(struct Analysis),funcp);
-    //printf("********number of bytes****%d\n",map_return );
-    //struct Analysis final = analysis_reduce(nfiles("/home/sanchay/Documents/CSE320/saagrawal/hw1/rsrc/ana_light"), analysis_space);
-    // for(int i=0;i<number_of_files;i++){
-    // analysis_print(analysis_space[i],map_return,0);    
-    // }
-    // analysis_print(final, map_return, hist);
-    
-
-    // For Stats   
-    // for(int i=0;i<number_of_files;i++){
-    // stats_print(stats_space[i],hist);    
-    // }
-    
-
-
-
-    //printf("%d\n",r );
-    //printf("number of files%d\n",number_of_files);
     return EXIT_SUCCESS;
 }
