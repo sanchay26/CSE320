@@ -457,11 +457,12 @@ void stats_print(Stats res, int hist){
 				}
 				printf("\n");
 			}
-		}
+		}printf("\n");
+		
 	}
 	
 	if(res.filename!=NULL){
-		printf("%s\n",res.filename );
+		printf("File: %s\n",res.filename );
 	}
 
 	printf("Count: %d\n",res.n);
@@ -474,55 +475,6 @@ void stats_print(Stats res, int hist){
 	int largest= -1;
 	int count= res.n;
 	int index=0;
-	//int q1;
-	//int q3;
-	//int median;
-	int fullarray[count];
-	for(int i=0;i<NVAL;i++){
-		if(res.histogram[i]!=0){
-			for(int j=0;j<res.histogram[i];j++){
-			fullarray[index]=i;
-			index++;
-			}
-		}
-	}
-	
-	if(count%2!=0){
-		int place=(count+1)/2;
-		printf("Median%f\n",(float)fullarray[place] );
-	}
-	else{
-		int place=(count+1)/2;
-		printf("Median%f\n", (float)(fullarray[place]+fullarray[place-1])/(float)2);
-	}
-
-	 //count*0.25;
-	float random1 = count*0.25;
-	if(random1-(int)random1==0){
-		printf("its an integer ");
-		int r = (int)random1;
-		printf("Q1%f\n",(float)(fullarray[r]+fullarray[r+1])/(float)2);
-	}
-	else{
-		//printf("its an float");
-		int r= (int)random1+1;
-		printf("Q1%d\n",fullarray[r]);
-	}
-
-	float random2 = count*0.75;
-	if(random2-(int)random2==0){
-		printf("its an integer ");
-		int r = (int)random2;
-		printf("Q3%f\n",(float)(fullarray[r]+fullarray[r+1])/(float)2);
-	}
-	else{
-		//printf("its an float");
-		int r= (int)random2+1;
-		printf("Q3%d\n",fullarray[r]);
-	}
-
-
-	//int mode;
 	for(int i=0;i<NVAL;i++){
 		if(res.histogram[i]>largest){
 			largest=res.histogram[i];
@@ -535,16 +487,53 @@ void stats_print(Stats res, int hist){
 		}		
 	}
 	
-	printf("Mode:");
+	printf("Mode: ");
 	for(int i=0;i<NVAL;i++){
 		if(res.histogram[i]==largest){
 			printf("%d ",i);
 		}
 	}
 	printf("\n");
+	int fullarray[count];
+	for(int i=0;i<NVAL;i++){
+		if(res.histogram[i]!=0){
+			for(int j=0;j<res.histogram[i];j++){
+			fullarray[index]=i;
+			index++;
+			}
+		}
+	}
+	
+	if(count%2!=0){
+		int place=(count+1)/2;
+		printf("Median: %f\n",(float)fullarray[place] );
+	}
+	else{
+		int place=(count+1)/2;
+		printf("Median: %f\n", (float)(fullarray[place]+fullarray[place-1])/(float)2);
+	}
 
+	 //count*0.25;
+	float random1 = count*0.25;
+	if(random1-(int)random1==0){
+		int r = (int)random1;
+		printf("Q1: %f\n",(float)(fullarray[r]+fullarray[r+1])/(float)2);
+	}
+	else{
+		int r= (int)random1+1;
+		printf("Q1: %d\n",fullarray[r]);
+	}
+
+	float random2 = count*0.75;
+	if(random2-(int)random2==0){
+		int r = (int)random2;
+		printf("Q3: %f\n",(float)(fullarray[r]+fullarray[r+1])/(float)2);
+	}
+	else{
+		int r= (int)random2+1;
+		printf("Q3: %d\n",fullarray[r]);
+	}
 	printf("Min: %d\n", min);
-	printf("Max:%d\n", max);
+	printf("Max:%d\n\n", max);
 
-	//printf("\n");
 }

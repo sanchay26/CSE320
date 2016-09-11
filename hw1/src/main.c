@@ -85,10 +85,11 @@ int main(int argc, char** argv) {
         int map_return = map(*argv,stats_space,sizeof(struct Stats),funcp);
         struct Stats final =  stats_reduce(nfiles(*argv), stats_space);
         printf("%d\n",map_return );
-        stats_print(final, hist);
         for(int i=0;i<nfiles(*argv);i++){
              stats_print(stats_space[i],0);    
         }
+        stats_print(final, hist);
+        
     }
     
 
