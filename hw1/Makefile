@@ -20,4 +20,4 @@ makefolder:
 	gcc $(CFLAGS) -c ./src/map_reduce.c -o build/map_reduce.o
 
 clean:
-	rm -f *.o map_reduce
+	rm -rf bin build
