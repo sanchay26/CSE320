@@ -1,4 +1,4 @@
-#include "../include/map_reduce.h"
+#include "map_reduce.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

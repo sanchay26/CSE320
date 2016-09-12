@@ -4,12 +4,12 @@
 # Look at the introduction doc for information on how make a Makefile.
 # This make file must build according to the structure described in the
 # introduction doc, if it doesn't you will get a ZERO!
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror -I include
 
 
 all:clean gcc1 makefolder 
 	@mkdir -p bin
-	gcc -g -o bin/mapreduce build/main.o build/map_reduce.o 
+	gcc -o bin/mapreduce build/main.o build/map_reduce.o 
 
 gcc1:	
 	@mkdir -p build

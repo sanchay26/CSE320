@@ -1,6 +1,6 @@
 //**DO NOT** CHANGE THE PROTOTYPES FOR THE FUNCTIONS GIVEN TO YOU. WE TEST EACH
 //FUNCTION INDEPENDENTLY WITH OUR OWN MAIN PROGRAM.
-#include "../include/map_reduce.h"
+#include "map_reduce.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -324,10 +324,6 @@ int stats(FILE* f, void* res, char* filename){
         if(c<min)
            min=c;
 	}
-	//average = mean(total,count);
-	//printf("Mean %f\n", average);
-	//printf("minimum:%d\n",min );
-	//printf("maximum:%d\n",max );
 	struct Stats *pointer=(struct Stats*)res;
 	pointer->sum=total;
 	pointer->n=count;
@@ -335,13 +331,6 @@ int stats(FILE* f, void* res, char* filename){
 	for(int i=0;i<NVAL;i++){
 		pointer->histogram[i]=array[i];
 	}
-	//testing stuff
-	//printf("%d\n",pointer->sum);
-	//printf("%d\n",pointer->n);
-	//printf("%s\n",pointer->filename);
-	// for(int i=0;i<NVAL;i++){
-	// 	printf("%d\n",pointer->histogram[i] );
-	// }
 	
 	return 0;;
 }
