@@ -9,28 +9,28 @@
 #include "../include/const.h"
 //Implement map_reduce.h functions here.
 // Help Menu Print Funtion 
-int help(){
-printf("%s\n\t", "Usage: ./mapreduce [h|v] FUNC DIR");
-printf("%s\t","FUNC");
-printf("%s\n\t\t","Which operation you would like to run on the data:");
-printf("%s\n\t\t","ana - Analysis of various text files in a directory.");
-printf("%s\n\t","stats - Calculates stats on files which contain only numbers.");
-printf("%s\t","DIR");
-printf("%s\n\n\t","The directory in which the files are located.");
-printf("%s\n\t","Options:");
-printf("%s\t","-h");
-printf("%s\n\t","Prints this help menu.");
-printf("%s\t","-v");
-printf("%s\n","Prints the map function’s results, stating the file it’s from.");
-return 0;
-}
+// int help(){
+// printf("%s\n\t", "Usage: ./mapreduce [h|v] FUNC DIR");
+// printf("%s\t","FUNC");
+// printf("%s\n\t\t","Which operation you would like to run on the data:");
+// printf("%s\n\t\t","ana - Analysis of various text files in a directory.");
+// printf("%s\n\t","stats - Calculates stats on files which contain only numbers.");
+// printf("%s\t","DIR");
+// printf("%s\n\n\t","The directory in which the files are located.");
+// printf("%s\n\t","Options:");
+// printf("%s\t","-h");
+// printf("%s\n\t","Prints this help menu.");
+// printf("%s\t","-v");
+// printf("%s\n","Prints the map function’s results, stating the file it’s from.");
+// return 0;
+// }
 // Validate Agrument Function Defination 
 int validateargs(int argc, char** argv){
 	
 	// Invalidate Arguments 0 or 1 Argument 
 	if (argc < 2){
 	//printf("%s\n","Invalid Arguments");
-	help();
+	//help();
 	return -1;
 	}
 	
@@ -41,12 +41,12 @@ int validateargs(int argc, char** argv){
 
 			if(strcmp(*argv,"-h") == 0){
 				// print menu here 
-				help();
-				return EXIT_SUCCESS;
+				//help();
+				return 0;
 			}
 			else {
 				//if second argument is not -h 
-				help();
+				//help();
 				return -1;
 			}
 	}
@@ -56,8 +56,8 @@ int validateargs(int argc, char** argv){
 			
 			if(strcmp(*argv,"-h")==0){
 				// print menu here 
-				help();
-				return EXIT_SUCCESS;
+				//help();
+				return 0;
 			}
 
 			else if (strcmp(*argv,"ana")==0){
@@ -73,7 +73,7 @@ int validateargs(int argc, char** argv){
 				else 
 				{
 					//printf("%s\n","Invalid Directory");
-					help();
+				//	help();
 					return -1;
 
     			/* Directory does not exist. */
@@ -91,14 +91,14 @@ int validateargs(int argc, char** argv){
 				}
 				else 
 				{
-					help();
+				//	help();
 					return -1;
     			/* Directory does not exist. */
 				}
 			}
 			else {
 				//printf("%s\n","Invalid Arguments");
-				help();
+			//	help();
 				return -1;
 			}
 	}
@@ -108,8 +108,8 @@ int validateargs(int argc, char** argv){
 			
 			if(strcmp(*argv,"-h")==0){
 				// print menu here 
-				help();
-				return EXIT_SUCCESS;
+				//help();
+				return 0;
 			}
 
 			else if(strcmp(*argv,"-v")==0){
@@ -135,7 +135,6 @@ int validateargs(int argc, char** argv){
 				}
 				
 				else if (strcmp(*argv,"stats")==0){
-					printf("**************in Stats" );
 					argv++;
 					DIR* dir = opendir(*argv);
 					if (dir)
@@ -168,11 +167,11 @@ int validateargs(int argc, char** argv){
 		argv++;
 		if(strcmp(*argv,"-h")==0){
 				// print menu here 
-				help();
-				return EXIT_SUCCESS;
+				//help();
+				return 0;
 		}
 		else {
-			help();
+		//	help();
 			return -1;
 		}
 	}
@@ -205,7 +204,7 @@ int map(char* dir, void* results, size_t size, int (*act)(FILE* f, void* res, ch
 	memset(results,'\0',NFILES*size);
 	void *res;
     res=results;
-    int g;
+    int g=0;
 	while ((entrance = readdir(directory)) != NULL) {
     	// Checking if it is a file 
     	if (entrance->d_type == DT_REG) { 
