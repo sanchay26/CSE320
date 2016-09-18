@@ -22,19 +22,41 @@ int main(int argc, char** argv)
 	int rv = 0;
 	Glyph* glyph = malloc(sizeof(Glyph)); 
 
-	
+	test = open("rsrc/test.txt", O_CREAT | O_WRONLY);
 	/* Handle BOM bytes for UTF16 specially. 
          * Read our values into the first and second elements. */
 	if((rv = read(fd, &buf[0], 1)) == 1 && (rv = read(fd, &buf[1], 1)) == 1){ 
 		
 		if(buf[0] == 0xff && buf[1] == 0xfe){
 			/*file is little endian*/
-			//printf("*********%x\n",buf[0]);
-			source = LITTLE; 
-		} else if(buf[0] == 0xfe && buf[1] == 0xff){
+			source = LITTLE;
+			if (source == conversion){
+				write(test, &buf[0], 1);
+				write(test,&buf[1],1);
+			}
+			else{
+				//printf("%s\n","Sounce LITTLE != Conversion" );
+				write(test, &buf[1], 1);
+				write(test,&buf[0],1);
+			}
+		} 
+
+	else if(buf[0] == 0xfe && buf[1] == 0xff){
 			/*file is big endian*/
 			source = BIG;
-		} else {
+			if (source==conversion){
+				//printf("%s\n","Source BIG== conversion" );
+				write(test, &buf[0], 1);
+				write(test,&buf[1],1);
+			}
+			else{
+				//printf("%s\n","Source Big!=Conversion" );
+				write(test, &buf[1], 1);
+				write(test,&buf[0],1);
+			}
+		} 
+
+		else {
 			/*file has no BOM*/
 			free(&glyph->bytes); 
 			fprintf(stderr, "File has no BOM.\n");
@@ -49,12 +71,18 @@ int main(int argc, char** argv)
 			memset(glyph, 0, sizeof(Glyph)+1);
 		}
 	}
-	test = open("rsrc/test.txt", O_CREAT | O_WRONLY);
+	
 	//write();
 	/* Now deal with the rest of the bytes.*/
 	while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1){
 
-		write_glyph(fill_glyph(glyph, buf, source, &fd));
+		if(source == conversion){
+			write_glyph(fill_glyph(glyph, buf, source, &fd));	
+		}
+
+		else {
+			write_glyph(swap_endianness(fill_glyph(glyph, buf, source, &fd)));
+		}
 		
 		void* memset_return = memset(glyph, 0, sizeof(Glyph)+1);
 	        /* Memory write failed, recover from it: */
@@ -70,11 +98,19 @@ int main(int argc, char** argv)
 
 Glyph* swap_endianness(Glyph* glyph) {
 	/* Use XOR to be more efficient with how we swap values. */
-	glyph->bytes[0] ^= glyph->bytes[1];
-	glyph->bytes[1] ^= glyph->bytes[0];
+	
+	unsigned char temporary = glyph->bytes[0];
+	glyph->bytes[0] = glyph->bytes[1];
+	glyph->bytes[1]= temporary;
+
+	//glyph->bytes[0] ^= glyph->bytes[1];
+	//glyph->bytes[1] ^= glyph->bytes[0];
 	if(glyph->surrogate){  /* If a surrogate pair, swap the next two bytes. */
-		glyph->bytes[2] ^= glyph->bytes[3];
-		glyph->bytes[3] ^= glyph->bytes[2];
+	 	temporary = glyph->bytes[2];
+		glyph->bytes[2] = glyph->bytes[3];
+		glyph->bytes[3]= temporary;
+		//glyph->bytes[2] ^= glyph->bytes[3];
+		//glyph->bytes[3] ^= glyph->bytes[2];
 	}
 	glyph->end = conversion;
 	return glyph;
@@ -181,8 +217,7 @@ void parse_args(int argc,char** argv)
 	
 	/* If getopt() returns with a valid (its working correctly) 
 	 * return code, then process the args! */
-	if((c = getopt_long(argc, argv, "hu:", long_options, &option_index)) 
-			!= -1){
+	if((c = getopt_long(argc, argv, "hu:", long_options, &option_index)) != -1){
 		switch(c){ 
 			case 'h':
 				print_help();
@@ -193,12 +228,14 @@ void parse_args(int argc,char** argv)
 				printf("***endian***%s\n",endian_convert );
 				if(strcmp(endian_convert,"16BE")==0)
 				{
+					conversion = BIG;
 					//Big Endian Condition
-					//printf("%s\n","****Big Endian****");
+					printf("%s\n","****Coversion Big Endian****");
 				}
 				else if(strcmp(endian_convert,"16LE")==0){
+					conversion = LITTLE;
 					//Little Endian Condition
-				//printf("%s\n","****Little Endian****");	
+				printf("%s\n","****Conversion Little Endian****");	
 				}
 				else {
 					printf("%s\n","wrong arguments" );
@@ -223,15 +260,9 @@ void parse_args(int argc,char** argv)
 	if(endian_convert == NULL){
 		fprintf(stderr, "Converson mode not given.\n");
 		print_help();
-	}
-
-	if(strcmp(endian_convert, "LE")){ 
-		conversion = LITTLE;
-	} else if(strcmp(endian_convert, "BE")){
-		conversion = BIG;
-	} else {
 		quit_converter(NO_FD);
 	}
+	
 }
 
 void print_help(void) {
