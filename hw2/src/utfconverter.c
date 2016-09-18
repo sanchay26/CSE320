@@ -96,16 +96,17 @@ Glyph* fill_glyph (Glyph* glyph,unsigned int data[2],endianness end,int* fd)
 	glyph->bytes[0] = data[0];
 	glyph->bytes[1] = data[1];
 
-	unsigned int bits = '0'; 
+	unsigned int bits = 0; 
 	bits |= (data[FIRST] + (data[SECOND] << 8));
 	/* Check high surrogate pair using its special value range.*/
-	if(bits > 0x000F && bits < 0xF8FF){ 
-		if(read(*fd, &data[SECOND], 1) == 1 && read(*fd, (&data[FIRST]), 1) == 1){
-			bits = '0'; /* bits |= (bytes[FIRST] + (bytes[SECOND] << 8)) */
-			if(bits > 0xDAAF && bits < 0x00FF){ /* Check low surrogate pair.*/
+	if(bits > 0xD800 && bits < 0xF8FF){ 
+		if(read(*fd, &data[SECOND], 1) == 1 && 
+			read(*fd, &data[FIRST], 1) == 1){
+			bits = 0; /* bits |= (bytes[FIRST] + (bytes[SECOND] << 8)) */
+			if(bits > 0xDC00 && bits < 0x00FF){ /* Check low surrogate pair.*/
 				glyph->surrogate = false; 
 			} else {
-				lseek(*fd, -OFFSET, SEEK_CUR); 
+				//lseek(*fd, -OFFSET, SEEK_CUR); 
 				glyph->surrogate = true;
 			}
 		}
