@@ -1,4 +1,5 @@
 #include "../include/utfconverter.h"
+#include <sys/stat.h>
 //#include "struct.txt" 
 char* filename;
 endianness source;
@@ -11,15 +12,15 @@ int main(int argc, char** argv)
 	/* After calling parse_args(), filename and conversion should be set. */
 
 	parse_args(argc, argv);
-	
-	int fd = open("rsrc/utf16le.txt", O_RDONLY); 
-
-	unsigned int buf[4]; 
+	int fd ;
+	fd = open(filename, O_RDONLY); 
+	unsigned char buf[4]; 
 	buf[0]=0;
 	buf[1]=0;
 	buf[2]=0;
 	buf[3]=0;
-	int rv = 0;
+	int rv ;
+	rv= 0;
 	Glyph* glyph = malloc(sizeof(Glyph)); 
 
 	//test = open("rsrc/test.txt", O_CREAT | O_WRONLY);
@@ -113,7 +114,7 @@ Glyph* swap_endianness(Glyph* glyph) {
 	return glyph;
 }
 
-Glyph* fill_glyph (Glyph* glyph,unsigned int data[4],endianness end,int* fd)  
+Glyph* fill_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd)  
 {
 	glyph->bytes[0] = data[0];
 	glyph->bytes[1] = data[1];
@@ -169,23 +170,12 @@ Glyph* fill_glyph (Glyph* glyph,unsigned int data[4],endianness end,int* fd)
 	glyph->end = end;
 
 	return glyph;
+}
 
-	//*****************************************
-	//bits |= (data[FIRST] + (data[SECOND] << 8));
-	/* Check high surrogate pair using its special value range.*/
-	//if(bits > 0xD800 && bits < 0xDBFF){ 
-	//	if(read(*fd, &data[SECOND], 1) == 1 && 
-	//		read(*fd, &data[FIRST], 1) == 1){
-	//		bits = 0; /* bits |= (bytes[FIRST] + (bytes[SECOND] << 8)) */
-	//		if(bits > 0xDC00 && bits < 0xDFFF){ /* Check low surrogate pair.*/
-	//			glyph->surrogate = false; 
-	//		} else {
-	//			//lseek(*fd, -OFFSET, SEEK_CUR); 
-	//			glyph->surrogate = true;
-	//		}
-	//	}
-	//}
-	//******************************
+int file_exist (char *filename)
+{
+  struct stat   buffer;   
+  return (stat (filename, &buffer) == 0);
 }
 
 void write_glyph(Glyph* glyph)
@@ -247,7 +237,16 @@ void parse_args(int argc,char** argv)
 	if(optind < argc){
 		filename= malloc(strlen(argv[optind])*sizeof(char));
 		strcpy(filename, argv[optind]);
-	} else {
+		if (file_exist (filename))
+		{
+  			printf("%s\n","File Exists" );;
+		}
+		else {
+			printf("%s\n","File Doesnt Exists" );
+			print_help();
+		}
+	} 
+	else {
 		fprintf(stderr, "Filename not given.\n");
 		print_help();
 	}
