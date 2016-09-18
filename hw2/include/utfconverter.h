@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 
-#define MAX_BYTES 2
+#define MAX_BYTES 4
 #define SURROGATE_SIZE 2
 #define NON_SURROGATE_SIZE 1
 #define NO_FD -1

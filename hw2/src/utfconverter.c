@@ -8,12 +8,12 @@ int main(int argc, char** argv)
 //char** argv;
 {
 	/* After calling parse_args(), filename and conversion should be set. */
-	//parse_args(argc, argv);
-	printf("%s\n",*argv);
-	printf("%d\n",argc );
-	printf("%s\n", "I am after argumnets");
+	parse_args(argc, argv);
+	//printf("%s\n",*argv);
+	//printf("%d\n",argc );
+	//printf("%s\n", "I am after argumnets");
 
-	int fd = open("rsrc/utf16BE-special.txt", O_RDONLY); 
+	int fd = open("rsrc/utf16le.txt", O_RDONLY); 
 	
 	unsigned int buf[2]; 
 	//int rv &= "0"; 
@@ -60,22 +60,18 @@ int main(int argc, char** argv)
 
 
 		write_glyph(fill_glyph(glyph, buf, source, &fd));
-		printf("%s\n","I am in wHILE" );
+		
+		//printf("%s\n","I am in wHILE" );
 		
 		//write_glyph(fill_glyph(glyph, NULL, source, &fd));
 		void* memset_return = memset(glyph, 0, sizeof(Glyph)+1);
 	        /* Memory write failed, recover from it: */
 	        if(memset_return == NULL){
 		        /* tweak write permission on heap memory. */
-		        asm("movl $8, %esi\n\t"
-		            "movl $.LC0, %edi\n\t"
-		            "movl $0, %eax");
 		        /* Now make the request again. */
 		        memset(glyph, 0, sizeof(Glyph)+1);
 	        }
 	}
-
-
 	quit_converter(NO_FD);
 	return 0;
 }
@@ -104,9 +100,7 @@ Glyph* fill_glyph (Glyph* glyph,unsigned int data[2],endianness end,int* fd)
 	bits |= (data[FIRST] + (data[SECOND] << 8));
 	/* Check high surrogate pair using its special value range.*/
 	if(bits > 0x000F && bits < 0xF8FF){ 
-		if(read(*fd, &data[SECOND], 1) == 1 && 
-			//read(*fd, &(&data[FIRST]), 1) == 1){
-			read(*fd, (&data[FIRST]), 1) == 1){
+		if(read(*fd, &data[SECOND], 1) == 1 && read(*fd, (&data[FIRST]), 1) == 1){
 			bits = '0'; /* bits |= (bytes[FIRST] + (bytes[SECOND] << 8)) */
 			if(bits > 0xDAAF && bits < 0x00FF){ /* Check low surrogate pair.*/
 				glyph->surrogate = false; 
@@ -145,23 +139,33 @@ void parse_args(int argc,char** argv)
 	static struct option long_options[] = {
 		{"help", no_argument, 0, 'h'},
 		{"h", no_argument, 0, 'h'},
-		{"u",required_argument,0,'u'},
+		{"u",required_argument,NULL,'u'},
 		{0, 0, 0, 0}
 	};
 
 	
 	/* If getopt() returns with a valid (its working correctly) 
 	 * return code, then process the args! */
-	if((c = getopt_long(argc, argv, "hu", long_options, &option_index)) 
+	if((c = getopt_long(argc, argv, "hu:", long_options, &option_index)) 
 			!= -1){
 		switch(c){ 
 			case 'h':
 				print_help();
 				break;
 			case 'u':
-				printf("optarg%s\n",argv[optind]);
+				//printf("optarg%s\n",argv[optind]);
 				endian_convert = optarg;
-				printf("%s\n","HERE" );
+				printf("***endian***%s\n",endian_convert );
+				if(strcmp(endian_convert,"16BE")==0)
+				{
+					printf("%s\n","****Big Endian****");
+				}
+				else if(strcmp(endian_convert,"16LE")==0){
+				printf("%s\n","****Little Endian****");	
+				}
+				else {
+					printf("%s\n","wrong arguments" );
+				}
 				break;
 			default:
 				fprintf(stderr, "Unrecognized argument.\n");
@@ -172,7 +176,10 @@ void parse_args(int argc,char** argv)
 	}
 
 	if(optind < argc){
+		printf("%s\n","HERE1");
+		filename= malloc(strlen(argv[optind])*sizeof(char));
 		strcpy(filename, argv[optind]);
+		printf("%s\n","HERE2");
 	} else {
 		fprintf(stderr, "Filename not given.\n");
 		print_help();
