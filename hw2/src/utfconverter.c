@@ -4,17 +4,21 @@ char* filename;
 endianness source;
 endianness conversion;
 
+int test=0;
 int main(int argc, char** argv)
 //char** argv;
 {
 	/* After calling parse_args(), filename and conversion should be set. */
+
 	parse_args(argc, argv);
 	
 	int fd = open("rsrc/utf16le.txt", O_RDONLY); 
-	
-	unsigned int buf[2]; 
+
+	unsigned int buf[4]; 
 	buf[0]=0;
 	buf[1]=0;
+	buf[2]=0;
+	buf[3]=0;
 	int rv = 0;
 	Glyph* glyph = malloc(sizeof(Glyph)); 
 
@@ -25,6 +29,7 @@ int main(int argc, char** argv)
 		
 		if(buf[0] == 0xff && buf[1] == 0xfe){
 			/*file is little endian*/
+			//printf("*********%x\n",buf[0]);
 			source = LITTLE; 
 		} else if(buf[0] == 0xfe && buf[1] == 0xff){
 			/*file is big endian*/
@@ -44,7 +49,8 @@ int main(int argc, char** argv)
 			memset(glyph, 0, sizeof(Glyph)+1);
 		}
 	}
-
+	test = open("rsrc/test.txt", O_CREAT | O_WRONLY);
+	//write();
 	/* Now deal with the rest of the bytes.*/
 	while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1){
 
@@ -74,43 +80,88 @@ Glyph* swap_endianness(Glyph* glyph) {
 	return glyph;
 }
 
-Glyph* fill_glyph (Glyph* glyph,unsigned int data[2],endianness end,int* fd)  
+Glyph* fill_glyph (Glyph* glyph,unsigned int data[4],endianness end,int* fd)  
 {
 	glyph->bytes[0] = data[0];
 	glyph->bytes[1] = data[1];
-
+	
 	unsigned int bits = 0; 
-	bits |= (data[FIRST] + (data[SECOND] << 8));
-	/* Check high surrogate pair using its special value range.*/
-	if(bits > 0xD800 && bits < 0xF8FF){ 
-		if(read(*fd, &data[SECOND], 1) == 1 && 
-			read(*fd, &data[FIRST], 1) == 1){
-			bits = 0; /* bits |= (bytes[FIRST] + (bytes[SECOND] << 8)) */
-			if(bits > 0xDC00 && bits < 0x00FF){ /* Check low surrogate pair.*/
-				glyph->surrogate = false; 
-			} else {
-				//lseek(*fd, -OFFSET, SEEK_CUR); 
-				glyph->surrogate = true;
+
+
+	if(end == LITTLE){
+		bits |= (data[FIRST] + (data[SECOND] << 8));	
+
+	}
+	else if (end == BIG){
+		bits |= ((data[FIRST]<<8) + data[SECOND]);
+	}
+
+	if(bits > 0xD800 && bits < 0xDBFF){ 
+		
+		if(read(*fd, &data[THIRD], 1) == 1 && read(*fd, &data[FOURTH], 1) == 1){
+					
+			bits = 0;
+					
+			if(end == LITTLE){
+				
+				bits |= (data[THIRD] + (data[FOURTH] << 8)) ;	
+			} 
+			else if(end == BIG){
+				
+				bits |= ((data[THIRD]<<8) + data[FOURTH]) ;	
+			} 
+			
+			if(bits > 0xDC00 && bits < 0xDFFF){ /* Check low surrogate pair.*/
+			glyph->surrogate = true; 
+			} 
+			
+			else {
+				lseek(*fd, -OFFSET, SEEK_CUR); 
+				glyph->surrogate = false;
 			}
 		}
+	}	
+
+	else{
+		
+		glyph->surrogate = false;
 	}
 	if(!glyph->surrogate){
-	//	glyph->bytes[THIRD] = glyph->bytes[FOURTH] |= 0;
+		glyph->bytes[THIRD] = 0;
+		glyph->bytes[FOURTH]= 0;
 	} else {
-	//	glyph->bytes[THIRD] = data[FIRST]; 
-	//	glyph->bytes[FOURTH] = data[SECOND];
+		glyph->bytes[THIRD] = data[THIRD]; 
+		glyph->bytes[FOURTH] = data[FOURTH];
 	}
 	glyph->end = end;
 
 	return glyph;
+
+	//*****************************************
+	//bits |= (data[FIRST] + (data[SECOND] << 8));
+	/* Check high surrogate pair using its special value range.*/
+	//if(bits > 0xD800 && bits < 0xDBFF){ 
+	//	if(read(*fd, &data[SECOND], 1) == 1 && 
+	//		read(*fd, &data[FIRST], 1) == 1){
+	//		bits = 0; /* bits |= (bytes[FIRST] + (bytes[SECOND] << 8)) */
+	//		if(bits > 0xDC00 && bits < 0xDFFF){ /* Check low surrogate pair.*/
+	//			glyph->surrogate = false; 
+	//		} else {
+	//			//lseek(*fd, -OFFSET, SEEK_CUR); 
+	//			glyph->surrogate = true;
+	//		}
+	//	}
+	//}
+	//******************************
 }
 
 void write_glyph(Glyph* glyph)
 {
 	if(glyph->surrogate){
-		write(STDIN_FILENO, glyph->bytes, SURROGATE_SIZE);
+		//printf("%s\n", "Somewhere");
+		write(test, glyph->bytes, SURROGATE_SIZE);
 	} else {
-		write(STDIN_FILENO, glyph->bytes, NON_SURROGATE_SIZE);
+		write(test, glyph->bytes, NON_SURROGATE_SIZE);
 	}
 }
 

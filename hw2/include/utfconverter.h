@@ -8,10 +8,10 @@
 
 
 #define MAX_BYTES 4
-#define SURROGATE_SIZE 2
-#define NON_SURROGATE_SIZE 1
+#define SURROGATE_SIZE 4
+#define NON_SURROGATE_SIZE 2
 #define NO_FD -1
-#define OFFSET 4
+#define OFFSET 2
 
 #define FIRST  0
 #define SECOND 1
