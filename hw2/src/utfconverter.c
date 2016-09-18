@@ -9,14 +9,10 @@ int main(int argc, char** argv)
 {
 	/* After calling parse_args(), filename and conversion should be set. */
 	parse_args(argc, argv);
-	//printf("%s\n",*argv);
-	//printf("%d\n",argc );
-	//printf("%s\n", "I am after argumnets");
-
+	
 	int fd = open("rsrc/utf16le.txt", O_RDONLY); 
 	
 	unsigned int buf[2]; 
-	//int rv &= "0"; 
 	buf[0]=0;
 	buf[1]=0;
 	int rv = 0;
@@ -27,15 +23,11 @@ int main(int argc, char** argv)
          * Read our values into the first and second elements. */
 	if((rv = read(fd, &buf[0], 1)) == 1 && (rv = read(fd, &buf[1], 1)) == 1){ 
 		
-		
-
 		if(buf[0] == 0xff && buf[1] == 0xfe){
 			/*file is little endian*/
-			//printf("%s\n","LITTLE" );
 			source = LITTLE; 
 		} else if(buf[0] == 0xfe && buf[1] == 0xff){
 			/*file is big endian*/
-			printf("%s\n","BIG" );
 			source = BIG;
 		} else {
 			/*file has no BOM*/
@@ -44,7 +36,6 @@ int main(int argc, char** argv)
 			quit_converter(NO_FD); 
 		}
 
-		//printf("%s\n","LITTLE" );
 		void* memset_return = memset(glyph, 0, sizeof(Glyph)+1);
 		/* Memory write failed, recover from it: */
 		if(memset_return == NULL){
@@ -55,15 +46,10 @@ int main(int argc, char** argv)
 	}
 
 	/* Now deal with the rest of the bytes.*/
-	while((rv = read(fd, &buf[0], 1)) == 1 &&  
-			(rv = read(fd, &buf[1], 1)) == 1){
-
+	while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1){
 
 		write_glyph(fill_glyph(glyph, buf, source, &fd));
 		
-		//printf("%s\n","I am in wHILE" );
-		
-		//write_glyph(fill_glyph(glyph, NULL, source, &fd));
 		void* memset_return = memset(glyph, 0, sizeof(Glyph)+1);
 	        /* Memory write failed, recover from it: */
 	        if(memset_return == NULL){
@@ -89,9 +75,6 @@ Glyph* swap_endianness(Glyph* glyph) {
 }
 
 Glyph* fill_glyph (Glyph* glyph,unsigned int data[2],endianness end,int* fd)  
-//unsigned int data[2]; 
-//endianness end; 
-//int* fd;
 {
 	glyph->bytes[0] = data[0];
 	glyph->bytes[1] = data[1];
@@ -159,10 +142,12 @@ void parse_args(int argc,char** argv)
 				printf("***endian***%s\n",endian_convert );
 				if(strcmp(endian_convert,"16BE")==0)
 				{
-					printf("%s\n","****Big Endian****");
+					//Big Endian Condition
+					//printf("%s\n","****Big Endian****");
 				}
 				else if(strcmp(endian_convert,"16LE")==0){
-				printf("%s\n","****Little Endian****");	
+					//Little Endian Condition
+				//printf("%s\n","****Little Endian****");	
 				}
 				else {
 					printf("%s\n","wrong arguments" );
@@ -177,10 +162,8 @@ void parse_args(int argc,char** argv)
 	}
 
 	if(optind < argc){
-		printf("%s\n","HERE1");
 		filename= malloc(strlen(argv[optind])*sizeof(char));
 		strcpy(filename, argv[optind]);
-		printf("%s\n","HERE2");
 	} else {
 		fprintf(stderr, "Filename not given.\n");
 		print_help();
