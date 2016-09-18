@@ -4,7 +4,7 @@ char* filename;
 endianness source;
 endianness conversion;
 
-int test=0;
+//int test=0;
 int main(int argc, char** argv)
 //char** argv;
 {
@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 	int rv = 0;
 	Glyph* glyph = malloc(sizeof(Glyph)); 
 
-	test = open("rsrc/test.txt", O_CREAT | O_WRONLY);
+	//test = open("rsrc/test.txt", O_CREAT | O_WRONLY);
 	/* Handle BOM bytes for UTF16 specially. 
          * Read our values into the first and second elements. */
 	if((rv = read(fd, &buf[0], 1)) == 1 && (rv = read(fd, &buf[1], 1)) == 1){ 
@@ -31,13 +31,12 @@ int main(int argc, char** argv)
 			/*file is little endian*/
 			source = LITTLE;
 			if (source == conversion){
-				write(test, &buf[0], 1);
-				write(test,&buf[1],1);
+				write(STDOUT_FILENO, &buf[0], 1);
+				write(STDOUT_FILENO,&buf[1],1);
 			}
 			else{
-				//printf("%s\n","Sounce LITTLE != Conversion" );
-				write(test, &buf[1], 1);
-				write(test,&buf[0],1);
+				write(STDOUT_FILENO, &buf[1], 1);
+				write(STDOUT_FILENO,&buf[0],1);
 			}
 		} 
 
@@ -45,14 +44,12 @@ int main(int argc, char** argv)
 			/*file is big endian*/
 			source = BIG;
 			if (source==conversion){
-				//printf("%s\n","Source BIG== conversion" );
-				write(test, &buf[0], 1);
-				write(test,&buf[1],1);
+				write(STDOUT_FILENO, &buf[0], 1);
+				write(STDOUT_FILENO,&buf[1],1);
 			}
 			else{
-				//printf("%s\n","Source Big!=Conversion" );
-				write(test, &buf[1], 1);
-				write(test,&buf[0],1);
+				write(STDOUT_FILENO, &buf[1], 1);
+				write(STDOUT_FILENO,&buf[0],1);
 			}
 		} 
 
@@ -195,9 +192,9 @@ void write_glyph(Glyph* glyph)
 {
 	if(glyph->surrogate){
 		//printf("%s\n", "Somewhere");
-		write(test, glyph->bytes, SURROGATE_SIZE);
+		write(STDOUT_FILENO, glyph->bytes, SURROGATE_SIZE);
 	} else {
-		write(test, glyph->bytes, NON_SURROGATE_SIZE);
+		write(STDOUT_FILENO, glyph->bytes, NON_SURROGATE_SIZE);
 	}
 }
 
@@ -230,12 +227,10 @@ void parse_args(int argc,char** argv)
 				{
 					conversion = BIG;
 					//Big Endian Condition
-					printf("%s\n","****Coversion Big Endian****");
 				}
 				else if(strcmp(endian_convert,"16LE")==0){
 					conversion = LITTLE;
 					//Little Endian Condition
-				printf("%s\n","****Conversion Little Endian****");	
 				}
 				else {
 					printf("%s\n","wrong arguments" );
