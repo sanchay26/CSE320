@@ -1,17 +1,17 @@
 CC = gcc
-SRC = $(wildcard src/*.c)
-INCLUDE = $(wildcard include/)
-BIN = utfconverter
-CFLAGS = -g -Wall -Werror -pedantic -Wextra 
-REQ = $(SRC) $(wildcard include/*.h)
+CFLAGS = -g -Wall -Werror -pedantic -Wextra -I include
 
-all: $(BIN)
 
-$(BIN): $(REQ)
-	$(CC) $(CFLAGS) -I $(INCLUDE) $(SRC) -o $(BIN)
+all: clean kaka
 
-.PHONY: clean
+kaka:
+	@mkdir -p build
+	@mkdir -p bin
+	
+	$(CC) $(CFLAGS) -c src/utfconverter.c -o build/utfconverter.o
+	$(CC) -g src/utfconverter.c -o bin/utf
 
 clean:
-	rm -f *.o $(BIN)
+	rm -rf build
+	rm -rf bin
 

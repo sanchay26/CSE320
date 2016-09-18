@@ -254,6 +254,7 @@ void parse_args(int argc,char** argv)
 	if(endian_convert == NULL){
 		fprintf(stderr, "Converson mode not given.\n");
 		print_help();
+		printf("%s\n","Something");
 		quit_converter(NO_FD);
 	}
 	
