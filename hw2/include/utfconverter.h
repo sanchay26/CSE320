@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/utsname.h>
 
 
 #define MAX_BYTES 4
@@ -102,3 +103,5 @@ void print_help P((void));
  * to close.
  */
 void quit_converter P((int));
+
+void verbosity1();

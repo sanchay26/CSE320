@@ -12,8 +12,10 @@ int main(int argc, char** argv)
 	unsigned char buf[4];
 	int rv;
 	Glyph* glyph = malloc(sizeof(Glyph));
-
+	
 	parse_args(argc, argv);
+
+	verbosity1();
 	
 	fd = open(filename, O_RDONLY); 
 	 
@@ -190,7 +192,6 @@ void parse_args(int argc,char** argv)
 				break;
 			case 'u':
 				endian_convert = optarg;
-				printf("***endian***%s\n",endian_convert );
 				if(strcmp(endian_convert,"16BE")==0)
 				{
 					conversion = BIG;
@@ -215,14 +216,11 @@ void parse_args(int argc,char** argv)
 	if(optind < argc){
 		filename= malloc(strlen(argv[optind])*sizeof(char));
 		strcpy(filename, argv[optind]);
-		if (file_exist (filename))
+		if (!file_exist (filename))
 		{
-  			printf("%s\n","File Exists" );;
-		}
-		else {
-			printf("%s\n","File Doesnt Exists" );
+  			printf("%s\n","File Doesnt Exists" );
 			print_help();
-		}
+  		}
 	} 
 	else {
 		fprintf(stderr, "Filename not given.\n");
@@ -255,4 +253,31 @@ void quit_converter(int fd)
 		close(fd);
 	exit(0);
 	/* Ensure that the file is included regardless of where we start compiling from. */
+}
+
+void verbosity1(void){
+
+	struct utsname unameData;
+	struct stat cat;
+	size_t inputfilesize;
+	
+	char hostname[128];
+	uname(&unameData);
+
+	gethostname(hostname, sizeof (hostname));
+
+	printf("OS NAME%s\n", unameData.sysname);
+	printf("Hostname:%s\n", hostname);
+
+	inputfilesize=0;
+	if(stat(filename,&cat)!=0){
+		printf("%s\n","ERROR" );
+	}
+	inputfilesize=cat.st_size;
+	printf("FILE SIZE %zd\n",inputfilesize);
+	char actualpath [300];
+	char *ptr;
+	ptr = realpath(filename, actualpath);
+	printf("Absolute path%s\n",ptr);
+
 }
