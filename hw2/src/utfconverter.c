@@ -68,11 +68,11 @@ int main(int argc, char** argv)
 	/* Now deal with the rest of the bytes.*/
 	while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1){
 
-		if(source == conversion){
+		if(source == LITTLE){
 			write_glyph(fill_glyph(glyph, buf, source, &fd));	
 		}
 
-		else {
+		else if(source == BIG) {
 			write_glyph(swap_endianness(fill_glyph(glyph, buf, source, &fd)));
 		}
 		
@@ -163,10 +163,29 @@ int file_exist (char *filename)
 
 void write_glyph(Glyph* glyph)
 {
-	if(glyph->surrogate){
+	if(conversion == LITTLE){
+		
+		if(glyph->surrogate){
 		write(STDOUT_FILENO, glyph->bytes, SURROGATE_SIZE);
-	} else {
+		} 
+		
+		else {
 		write(STDOUT_FILENO, glyph->bytes, NON_SURROGATE_SIZE);
+		}
+	}
+	if(conversion == BIG){
+		
+		if(glyph->surrogate){
+		write(STDOUT_FILENO, &glyph->bytes[1],1);
+		write(STDOUT_FILENO, &glyph->bytes[0],1);
+		write(STDOUT_FILENO, &glyph->bytes[3],1);
+		write(STDOUT_FILENO, &glyph->bytes[2],1);
+		} 
+		
+		else {
+		write(STDOUT_FILENO, &glyph->bytes[1], 1);
+		write(STDOUT_FILENO, &glyph->bytes[0], 1);
+		}
 	}
 }
 
@@ -214,7 +233,7 @@ void parse_args(int argc,char** argv)
 	}
 
 	if(optind < argc){
-		filename= malloc(strlen(argv[optind])*sizeof(char));
+		filename= malloc((strlen(argv[optind])+1)*sizeof(char));
 		strcpy(filename, argv[optind]);
 		if (!file_exist (filename))
 		{
@@ -262,6 +281,7 @@ void verbosity1(void){
 	size_t inputfilesize;
 	
 	char hostname[128];
+	char *buffer = filename;
 	uname(&unameData);
 
 	gethostname(hostname, sizeof (hostname));
@@ -270,14 +290,14 @@ void verbosity1(void){
 	printf("Hostname:%s\n", hostname);
 
 	inputfilesize=0;
-	if(stat(filename,&cat)!=0){
-		printf("%s\n","ERROR" );
-	}
+	// if(stat(filename,&cat)!=0){
+	// 	printf("%s\n","ERROR" );
+	// }
 	inputfilesize=cat.st_size;
 	printf("FILE SIZE %zd\n",inputfilesize);
 	char actualpath [300];
 	char *ptr;
-	ptr = realpath(filename, actualpath);
+	ptr = realpath(buffer, actualpath);
 	printf("Absolute path%s\n",ptr);
 
 }
