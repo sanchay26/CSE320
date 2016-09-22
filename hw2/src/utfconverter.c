@@ -4,13 +4,15 @@
 char* filename;
 endianness source;
 endianness conversion;
+int utf8;
+int rv;
 
 int main(int argc, char** argv)
 {
 	/* After calling parse_args(), filename and conversion should be set. */
 	int fd;
 	unsigned char buf[4];
-	int rv;
+	
 	Glyph* glyph = malloc(sizeof(Glyph));
 	
 	parse_args(argc, argv);
@@ -24,13 +26,27 @@ int main(int argc, char** argv)
 	buf[2]=0;
 	buf[3]=0;
 	rv= 0;
-
+	utf8=0;
 	/*test = open("rsrc/test.txt", O_CREAT | O_WRONLY);*/
 	/* Handle BOM bytes for UTF16 specially. 
          * Read our values into the first and second elements. */
 	if((rv = read(fd, &buf[0], 1)) == 1 && (rv = read(fd, &buf[1], 1)) == 1){ 
 		
-		if(buf[0] == 0xff && buf[1] == 0xfe){
+		/********Here starts UTF-8 Stuff ********/
+
+		if(buf[0]==0xef && buf[1]==0xbb){
+
+			if((rv = read(fd,&buf[2],1)==1)){
+
+				if(buf[2]==0xbf){
+					printf("%s\n","I am UTF8");
+					utf8 = 1;
+				}
+			}
+		}
+		/*************************/
+
+		else if(buf[0] == 0xff && buf[1] == 0xfe){
 			/*file is little endian*/
 			source = LITTLE;
 			if (source == conversion){
@@ -43,7 +59,7 @@ int main(int argc, char** argv)
 			}
 		} 
 
-	else if(buf[0] == 0xfe && buf[1] == 0xff){
+		else if(buf[0] == 0xfe && buf[1] == 0xff){
 			/*file is big endian*/
 			source = BIG;
 			if (source==conversion){
@@ -64,20 +80,31 @@ int main(int argc, char** argv)
 		}
 
 	}
-	
 	/* Now deal with the rest of the bytes.*/
-	while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1){
+	if(utf8==1){
 
-		if(source == LITTLE){
-			write_glyph(fill_glyph(glyph, buf, source, &fd));	
+		while((rv = read(fd, &buf[0], 1)) == 1){
+			mock_glyph(glyph,buf,source,&fd);
 		}
 
-		else if(source == BIG) {
-			write_glyph(swap_endianness(fill_glyph(glyph, buf, source, &fd)));
-		}
-		
 	}
+	else
+	{
+		while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1 ){
 
+			if(source == LITTLE){
+				write_glyph(fill_glyph(glyph, buf, source, &fd));	
+			}
+
+			else if(source == BIG) {
+				write_glyph(swap_endianness(fill_glyph(glyph, buf, source, &fd)));
+			}
+			if(utf8==1){
+				mock_glyph(glyph, buf, source, &fd);
+			}
+		}
+	}
+	
 	quit_converter(NO_FD);
 	return 0;
 }
@@ -143,6 +170,7 @@ Glyph* fill_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd)
 		
 		glyph->surrogate = false;
 	}
+	
 	if(!glyph->surrogate){
 		glyph->bytes[THIRD] = 0;
 		glyph->bytes[FOURTH]= 0;
@@ -300,4 +328,91 @@ void verbosity1(void){
 	ptr = realpath(buffer, actualpath);
 	printf("Absolute path%s\n",ptr);
 
+}
+Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
+	
+	unsigned int bits = 0; 
+	unsigned char byte0 = 0;
+	unsigned char byte1 = 0;
+	unsigned char byte2 = 0;
+	unsigned int  merge = 0;
+	if(end==LITTLE){
+
+	}
+	//unsigned int mask1 =0;
+	//unsigned int mask0 = 0;
+	bits |= (data[0] >> 7) ;
+	
+	if(bits==0x00){
+		glyph->bytes[0] = data[0];
+		glyph->bytes[1] = 0x00;
+		glyph->surrogate = false;
+		write(STDOUT_FILENO, &glyph->bytes[0],1);
+		write(STDOUT_FILENO, &glyph->bytes[1],1);
+		/*Glyph is encoded in one byte*/
+	}
+	
+	else {
+		bits=0;
+		
+		bits |= (data[0] >> 5);
+		if(bits == 0x06){
+			printf("%s\n","2 byte stuff");
+				/*Glyph is encoded in two bytes*/
+			if((rv=read(*fd, &data[1], 1)) == 1){   
+				glyph->bytes[0]=((data[0]<<6)+(data[1] & 0x3f));
+				glyph->bytes[1]=(((data[0]&0x1f)>>2) & 0x07); 
+				glyph->surrogate = false;
+				write(STDOUT_FILENO, &glyph->bytes[0],1);
+				write(STDOUT_FILENO, &glyph->bytes[1],1);
+			}
+			else{
+				printf("%s\n", "ERROR");
+			}
+		}
+		bits=0;
+		bits |= (data[0] >> 4);
+		if(bits == 0x0e){
+			/*Glyph is encoded in three bytes*/
+			printf("%s\n","3 byte stuff");
+			if((rv=read(*fd, &data[1], 1)) == 1 && (rv=read(*fd, &data[2], 1))==1){  
+				glyph->bytes[0] = ((data[1]&0x3f)<<6)+(data[2]&0x3f);
+				glyph->bytes[1] = ((data[0]&0x0f)<<4)+((data[1]&0x3c)>>2);
+				glyph->surrogate = false;
+				write(STDOUT_FILENO, &glyph->bytes[0],1);
+				write(STDOUT_FILENO, &glyph->bytes[1],1);
+			}
+			
+		}
+		bits=0;
+		bits |= (data[0] >> 3);
+		if(bits == 0x1e){
+			/*Glyph is encoded in four bytes*/
+			printf("%s\n", "4 byte stuff");
+			if(read(*fd, &data[1], 1) == 1 && read(*fd, &data[2], 1)==1 && read(*fd, &data[3], 1)==1){
+				byte0= (data[3]&0x3f) + (data[2]<<6);
+				byte1= ((data[2]&0x3c)>>2)+(data[1]<<4);
+				byte2= ((data[1]& 0x30)>>4)+((data[0]&0x07)<<2);
+				merge |=(byte2<<8)+((byte1<<8)+byte0);
+				if(merge>0x10000){
+					printf("%s\n","MErged" );
+				}
+
+			}
+			// glyph->bytes[0]=0;
+			// glyph->bytes[1]=0;
+			// glyph->bytes[2]=0;
+			// glyph->bytes[3]=0;
+			// write(STDOUT_FILENO, &glyph->bytes[0],1);
+			// write(STDOUT_FILENO, &glyph->bytes[1],1);
+			// write(STDOUT_FILENO, &glyph->bytes[2],1);
+			// write(STDOUT_FILENO, &glyph->bytes[3],1);
+
+		}
+		else{
+			printf("%s\n","Wrong UT8-8 Encoding " );
+		}
+	}
+
+return glyph;
 }

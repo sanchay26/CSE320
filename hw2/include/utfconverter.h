@@ -74,6 +74,8 @@ Glyph* swap_endianness P((Glyph*));
  */
 Glyph* fill_glyph P((Glyph*, unsigned char[], endianness, int*));
 
+Glyph* mock_glyph P((Glyph*, unsigned char[], endianness, int*));
+
 /**
  * Writes the given glyph's contents to stdout.
  *
