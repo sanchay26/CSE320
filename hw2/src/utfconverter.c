@@ -225,14 +225,16 @@ void parse_args(int argc,char** argv)
 	static struct option long_options[] = {
 		{"help", no_argument, 0, 'h'},
 		{"h", no_argument, 0, 'h'},
+		{"v",no_argument,0,'v'},
 		{"u",required_argument,NULL,'u'},
 		{0, 0, 0, 0}
 	};
 
-	
+	int count= 0;
 	/* If getopt() returns with a valid (its working correctly) 
 	 * return code, then process the args! */
-	if((c = getopt_long(argc, argv, "hu:", long_options, &option_index)) != -1){
+	while((c = getopt_long(argc, argv, "hvu:", long_options, &option_index)) != -1){
+		
 		switch(c){ 
 			case 'h':
 				print_help();
@@ -251,6 +253,17 @@ void parse_args(int argc,char** argv)
 				else {
 					printf("%s\n","wrong arguments" );
 				}
+				break;
+			case 'v':
+				count++;
+				printf("count%d\n",count);
+				if(count>=2){
+				printf("%s\n","****v2****");	
+				}
+				else {
+					printf("%s\n","*****v1****" );
+				}
+				
 				break;
 			default:
 				fprintf(stderr, "Unrecognized argument.\n");
@@ -331,7 +344,7 @@ void verbosity1(void){
 }
 Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 	
-	unsigned int bits = 0; 
+	unsigned int  bits = 0; 
 	unsigned char byte0 = 0;
 	unsigned char byte1 = 0;
 	unsigned char byte2 = 0;
@@ -365,6 +378,7 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 				glyph->surrogate = false;
 				write(STDOUT_FILENO, &glyph->bytes[0],1);
 				write(STDOUT_FILENO, &glyph->bytes[1],1);
+				return glyph;
 			}
 			else{
 				printf("%s\n", "ERROR");
@@ -372,15 +386,16 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 		}
 		bits=0;
 		bits |= (data[0] >> 4);
+		printf("%d\n",bits);
 		if(bits == 0x0e){
 			/*Glyph is encoded in three bytes*/
-			printf("%s\n","3 byte stuff");
 			if((rv=read(*fd, &data[1], 1)) == 1 && (rv=read(*fd, &data[2], 1))==1){  
 				glyph->bytes[0] = ((data[1]&0x3f)<<6)+(data[2]&0x3f);
 				glyph->bytes[1] = ((data[0]&0x0f)<<4)+((data[1]&0x3c)>>2);
 				glyph->surrogate = false;
 				write(STDOUT_FILENO, &glyph->bytes[0],1);
 				write(STDOUT_FILENO, &glyph->bytes[1],1);
+				return glyph;
 			}
 			
 		}
@@ -388,7 +403,6 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 		bits |= (data[0] >> 3);
 		if(bits == 0x1e){
 			/*Glyph is encoded in four bytes*/
-			printf("%s\n", "4 byte stuff");
 			if(read(*fd, &data[1], 1) == 1 && read(*fd, &data[2], 1)==1 && read(*fd, &data[3], 1)==1){
 				byte0= (data[3]&0x3f) + (data[2]<<6);
 				byte1= ((data[2]&0x3c)>>2)+(data[1]<<4);
