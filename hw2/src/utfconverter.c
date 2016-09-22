@@ -1,5 +1,6 @@
 #include "../include/utfconverter.h"
 #include <sys/stat.h>
+#include <sys/times.h>
 
 char* filename;
 endianness source;
@@ -14,10 +15,10 @@ int main(int argc, char** argv)
 	unsigned char buf[4];
 	
 	Glyph* glyph = malloc(sizeof(Glyph));
-	
+
 	parse_args(argc, argv);
 
-	verbosity1();
+	//verbosity1();
 	
 	fd = open(filename, O_RDONLY); 
 	 
@@ -230,10 +231,9 @@ void parse_args(int argc,char** argv)
 		{0, 0, 0, 0}
 	};
 
-	int count= 0;
 	/* If getopt() returns with a valid (its working correctly) 
 	 * return code, then process the args! */
-	while((c = getopt_long(argc, argv, "hvu:", long_options, &option_index)) != -1){
+	while((c = getopt_long(argc, argv, "hu:v", long_options, &option_index)) != -1){
 		
 		switch(c){ 
 			case 'h':
@@ -251,18 +251,19 @@ void parse_args(int argc,char** argv)
 					
 				}
 				else {
-					printf("%s\n","wrong arguments" );
+					printf("%s\n","Wrong Arguments" );
 				}
 				break;
 			case 'v':
-				count++;
-				printf("count%d\n",count);
-				if(count>=2){
-				printf("%s\n","****v2****");	
-				}
-				else {
-					printf("%s\n","*****v1****" );
-				}
+				verbosity1();
+				// //count++;
+				// //printf("count%d\n",count);
+				// if(count>=2){
+				// printf("%s\n","****v2****");	
+				// }
+				// else {
+				// 	printf("%s\n","*****v1****" );
+				// }
 				
 				break;
 			default:
@@ -318,6 +319,9 @@ void quit_converter(int fd)
 void verbosity1(void){
 
 	struct utsname unameData;
+	//struct tms time;
+	//clock_t times(struct tms *time);
+	//printf("****USER TIME%zd\n",time.tms_utime);
 	struct stat cat;
 	size_t inputfilesize;
 	
@@ -349,6 +353,10 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 	unsigned char byte1 = 0;
 	unsigned char byte2 = 0;
 	unsigned int  merge = 0;
+	unsigned int merge1=0;
+	unsigned int mergeh=0;
+	unsigned int mergel=0;
+
 	if(end==LITTLE){
 
 	}
@@ -407,20 +415,23 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 				byte0= (data[3]&0x3f) + (data[2]<<6);
 				byte1= ((data[2]&0x3c)>>2)+(data[1]<<4);
 				byte2= ((data[1]& 0x30)>>4)+((data[0]&0x07)<<2);
-				merge |=(byte2<<8)+((byte1<<8)+byte0);
+				merge |=((byte0)+(byte1<<8))+(byte2<<16);
 				if(merge>0x10000){
+
+					merge1 = merge - 0x10000;
+					mergeh = merge1>>10;
+					mergel = merge1 & 0x3ff;
+
+					mergeh = 0xd800 + mergeh;
+					mergel = 0xdc00 + mergel;
+
 					printf("%s\n","MErged" );
+				}
+				else {
 				}
 
 			}
-			// glyph->bytes[0]=0;
-			// glyph->bytes[1]=0;
-			// glyph->bytes[2]=0;
-			// glyph->bytes[3]=0;
-			// write(STDOUT_FILENO, &glyph->bytes[0],1);
-			// write(STDOUT_FILENO, &glyph->bytes[1],1);
-			// write(STDOUT_FILENO, &glyph->bytes[2],1);
-			// write(STDOUT_FILENO, &glyph->bytes[3],1);
+			
 
 		}
 		else{
