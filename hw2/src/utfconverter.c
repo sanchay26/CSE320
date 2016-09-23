@@ -7,6 +7,7 @@ endianness source;
 endianness conversion;
 int utf8;
 int rv;
+int verbosity = 0;
 
 int main(int argc, char** argv)
 {
@@ -18,6 +19,7 @@ int main(int argc, char** argv)
 
 	parse_args(argc, argv);
 
+	
 	fd = open(filename, O_RDONLY); 
 	 
 	buf[0]=0;
@@ -79,6 +81,10 @@ int main(int argc, char** argv)
 		}
 
 	}
+	if(verbosity>=1){
+		verbosity1();
+	}
+
 	/* Now deal with the rest of the bytes.*/
 	if(utf8==1){
 		unsigned char bom[2];
@@ -263,7 +269,7 @@ void parse_args(int argc,char** argv)
 				}
 				break;
 			case 'v':
-				verbosity1();
+				verbosity++;
 				break;
 			default:
 				fprintf(stderr, "Unrecognized argument.\n");
@@ -320,26 +326,45 @@ void verbosity1(void){
 	struct utsname unameData;
 	struct stat cat;
 	size_t inputfilesize;
-	
-	char hostname[128];
-	char *buffer = filename;
-	uname(&unameData);
-
-	gethostname(hostname, sizeof (hostname));
-
-	printf("OS NAME%s\n", unameData.sysname);
-	printf("Hostname:%s\n", hostname);
-
-	inputfilesize=0;
-	/* if(stat(filename,&cat)!=0){
-	printf("%s\n","ERROR" );
-	/ }*/
-	inputfilesize=cat.st_size;
-	printf("FILE SIZE %zd\n",inputfilesize);
 	char actualpath [300];
 	char *ptr;
+	char hostname[128];
+	char *buffer = filename;
+	char *input;
+	char *output;
+	
+	uname(&unameData);
+	
+
+	if(source == LITTLE){
+		input = "UTF-16LE";
+	}
+	
+	if (source == BIG){
+		input = "UTF-16BE";
+	}
+
+	if(conversion == LITTLE){
+		output = "UTF-16LE";
+	}
+	if(conversion == BIG){
+		output = "UTF-16BE";
+	}
+
+	gethostname(hostname, sizeof (hostname));
+	inputfilesize=0;
+	 if(stat(filename,&cat)!=0){
+	printf("%s\n","ERROR" );
+	 }
+	inputfilesize=cat.st_size;
 	ptr = realpath(buffer, actualpath);
-	printf("Absolute path%s\n",ptr);
+
+	printf("Input file size: %d\n",(int)inputfilesize);
+	printf("Input file path: %s\n",ptr);
+	printf("Input file encoding: %s\n",input);
+	printf("Output file encoding: %s\n",output);
+	printf("Hostmachine: %s\n", hostname);
+	printf("Operating System: %s\n", unameData.sysname);
 
 }
 Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
