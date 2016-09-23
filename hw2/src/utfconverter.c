@@ -83,9 +83,19 @@ int main(int argc, char** argv)
 	}
 	/* Now deal with the rest of the bytes.*/
 	if(utf8==1){
-
+		unsigned char bom[2];
+		bom[0]= 0xff;
+		bom[1]= 0xfe;
+		if(conversion== LITTLE){
+			write(STDOUT_FILENO, &bom[0], 1);
+			write(STDOUT_FILENO, &bom[1], 1);
+		}
+		else if (conversion== BIG){
+			write(STDOUT_FILENO, &bom[1], 1);
+			write(STDOUT_FILENO, &bom[0], 1);
+		}
 		while((rv = read(fd, &buf[0], 1)) == 1){
-			mock_glyph(glyph,buf,source,&fd);
+			write_glyph(mock_glyph(glyph,buf,source,&fd));
 		}
 
 	}
@@ -356,6 +366,10 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 	unsigned int merge1=0;
 	unsigned int mergeh=0;
 	unsigned int mergel=0;
+	unsigned char final0=0;
+	unsigned char final1=0;
+	unsigned char final2=0;
+	unsigned char final3=0;
 
 	if(end==LITTLE){
 
@@ -368,8 +382,8 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 		glyph->bytes[0] = data[0];
 		glyph->bytes[1] = 0x00;
 		glyph->surrogate = false;
-		write(STDOUT_FILENO, &glyph->bytes[0],1);
-		write(STDOUT_FILENO, &glyph->bytes[1],1);
+		//write(STDOUT_FILENO, &glyph->bytes[0],1);
+		//write(STDOUT_FILENO, &glyph->bytes[1],1);
 		/*Glyph is encoded in one byte*/
 	}
 	
@@ -378,14 +392,14 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 		
 		bits |= (data[0] >> 5);
 		if(bits == 0x06){
-			printf("%s\n","2 byte stuff");
+			//printf("%s\n","2 byte stuff");
 				/*Glyph is encoded in two bytes*/
 			if((rv=read(*fd, &data[1], 1)) == 1){   
 				glyph->bytes[0]=((data[0]<<6)+(data[1] & 0x3f));
 				glyph->bytes[1]=(((data[0]&0x1f)>>2) & 0x07); 
 				glyph->surrogate = false;
-				write(STDOUT_FILENO, &glyph->bytes[0],1);
-				write(STDOUT_FILENO, &glyph->bytes[1],1);
+				//write(STDOUT_FILENO, &glyph->bytes[0],1);
+				//write(STDOUT_FILENO, &glyph->bytes[1],1);
 				return glyph;
 			}
 			else{
@@ -401,8 +415,8 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 				glyph->bytes[0] = ((data[1]&0x3f)<<6)+(data[2]&0x3f);
 				glyph->bytes[1] = ((data[0]&0x0f)<<4)+((data[1]&0x3c)>>2);
 				glyph->surrogate = false;
-				write(STDOUT_FILENO, &glyph->bytes[0],1);
-				write(STDOUT_FILENO, &glyph->bytes[1],1);
+				//write(STDOUT_FILENO, &glyph->bytes[0],1);
+				//write(STDOUT_FILENO, &glyph->bytes[1],1);
 				return glyph;
 			}
 			
@@ -425,9 +439,21 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 					mergeh = 0xd800 + mergeh;
 					mergel = 0xdc00 + mergel;
 
-					printf("%s\n","MErged" );
+					final0 = mergeh & 0xff;
+					final1 = (mergeh >>8) & 0xff;
+					final2 = mergel & 0xff;
+					final3 = (mergel >>8) & 0xff;
+
+					glyph->bytes[0]=final0;
+					glyph->bytes[1]=final1;
+					glyph->bytes[2]=final2;
+					glyph->bytes[3]=final3;
+					glyph->surrogate = true;
+					return glyph;
+					//printf("%s\n","MErged" );
 				}
 				else {
+					printf("%s\n","Wrong UTF8 Encoding" );
 				}
 
 			}
