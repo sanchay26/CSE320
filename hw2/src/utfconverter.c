@@ -241,7 +241,7 @@ void parse_args(int argc,char** argv)
 		{"help", no_argument, 0, 'h'},
 		{"h", no_argument, 0, 'h'},
 		{"v",no_argument,0,'v'},
-		{"u",required_argument,NULL,'u'},
+		{"UTF",required_argument,NULL,'u'},
 		{0, 0, 0, 0}
 	};
 
@@ -304,7 +304,7 @@ void parse_args(int argc,char** argv)
 
 void print_help(void) {
 	int i;
-	for(i = 0; i < 4; i++){
+	for(i = 0; i < 9; i++){
 		printf("%s",USAGE[i]); 
 	}
 	quit_converter(NO_FD);

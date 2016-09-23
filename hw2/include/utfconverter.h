@@ -39,11 +39,16 @@ typedef struct Glyph {
 extern char* filename;
 
 /** The usage statement. */
-const char* USAGE[4] = { 
-"Usage:  ./utfconverter FILENAME [OPTION]\n\t",
-"./utfconverter -h\t\t\tDisplays this usage statement.\n\t",
-"./utfconverter --help\t\t\tDisplays this usage statement.\n\t"
-"./utfconverter --UTF-16=ENDIANNESS\tEndianness to convert to.\n",
+const char* USAGE[9] = { 
+"Command line utitlity for converting files from UTF8 to UTF-16LE or UTF16BE \nor converting from UTF-16LE to UTF-16BE or vice versa\n\n",
+"Usage:  ./utf [-h|--help] -u OUT_ENC | --UTF=OUT_ENC IN_FILE \n\n\t",
+"Option arguments:\n\t\t",
+"-h, --help\t Displays this usage.\n\t\t"
+"-v, -vv\t Toggles the verbosity of the program to level 1 or 2.\n\n\t",
+"Mandatory argument:\n\t\t",
+"-u OUT_ENC, --UTF=OUT_ENC\t Sets the output encoding.\n\t\t\t Valid values for OUT_ENC: 16LE,16BE\n\n\t",
+"Positional Arguments: \n\t",
+"IN_FILE\t The file to convert."
 };
 
 /** Which endianness to convert to. */
