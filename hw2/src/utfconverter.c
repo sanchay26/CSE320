@@ -18,8 +18,6 @@ int main(int argc, char** argv)
 
 	parse_args(argc, argv);
 
-	//verbosity1();
-	
 	fd = open(filename, O_RDONLY); 
 	 
 	buf[0]=0;
@@ -266,15 +264,6 @@ void parse_args(int argc,char** argv)
 				break;
 			case 'v':
 				verbosity1();
-				// //count++;
-				// //printf("count%d\n",count);
-				// if(count>=2){
-				// printf("%s\n","****v2****");	
-				// }
-				// else {
-				// 	printf("%s\n","*****v1****" );
-				// }
-				
 				break;
 			default:
 				fprintf(stderr, "Unrecognized argument.\n");
@@ -329,9 +318,6 @@ void quit_converter(int fd)
 void verbosity1(void){
 
 	struct utsname unameData;
-	//struct tms time;
-	//clock_t times(struct tms *time);
-	//printf("****USER TIME%zd\n",time.tms_utime);
 	struct stat cat;
 	size_t inputfilesize;
 	
@@ -345,9 +331,9 @@ void verbosity1(void){
 	printf("Hostname:%s\n", hostname);
 
 	inputfilesize=0;
-	// if(stat(filename,&cat)!=0){
-	// 	printf("%s\n","ERROR" );
-	// }
+	/* if(stat(filename,&cat)!=0){
+	printf("%s\n","ERROR" );
+	/ }*/
 	inputfilesize=cat.st_size;
 	printf("FILE SIZE %zd\n",inputfilesize);
 	char actualpath [300];
@@ -363,27 +349,23 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 	unsigned char byte1 = 0;
 	unsigned char byte2 = 0;
 	unsigned int  merge = 0;
-	unsigned int merge1=0;
-	unsigned int mergeh=0;
-	unsigned int mergel=0;
-	unsigned char final0=0;
-	unsigned char final1=0;
-	unsigned char final2=0;
-	unsigned char final3=0;
+	unsigned int merge1 = 0;
+	unsigned int mergeh = 0;
+	unsigned int mergel = 0;
+	unsigned char final0 = 0;
+	unsigned char final1 = 0;
+	unsigned char final2 = 0;
+	unsigned char final3 = 0;
 
 	if(end==LITTLE){
 
 	}
-	//unsigned int mask1 =0;
-	//unsigned int mask0 = 0;
 	bits |= (data[0] >> 7) ;
 	
 	if(bits==0x00){
 		glyph->bytes[0] = data[0];
 		glyph->bytes[1] = 0x00;
 		glyph->surrogate = false;
-		//write(STDOUT_FILENO, &glyph->bytes[0],1);
-		//write(STDOUT_FILENO, &glyph->bytes[1],1);
 		/*Glyph is encoded in one byte*/
 	}
 	
@@ -392,14 +374,11 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 		
 		bits |= (data[0] >> 5);
 		if(bits == 0x06){
-			//printf("%s\n","2 byte stuff");
 				/*Glyph is encoded in two bytes*/
 			if((rv=read(*fd, &data[1], 1)) == 1){   
 				glyph->bytes[0]=((data[0]<<6)+(data[1] & 0x3f));
 				glyph->bytes[1]=(((data[0]&0x1f)>>2) & 0x07); 
 				glyph->surrogate = false;
-				//write(STDOUT_FILENO, &glyph->bytes[0],1);
-				//write(STDOUT_FILENO, &glyph->bytes[1],1);
 				return glyph;
 			}
 			else{
@@ -415,8 +394,6 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 				glyph->bytes[0] = ((data[1]&0x3f)<<6)+(data[2]&0x3f);
 				glyph->bytes[1] = ((data[0]&0x0f)<<4)+((data[1]&0x3c)>>2);
 				glyph->surrogate = false;
-				//write(STDOUT_FILENO, &glyph->bytes[0],1);
-				//write(STDOUT_FILENO, &glyph->bytes[1],1);
 				return glyph;
 			}
 			
@@ -450,7 +427,6 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 					glyph->bytes[3]=final3;
 					glyph->surrogate = true;
 					return glyph;
-					//printf("%s\n","MErged" );
 				}
 				else {
 					printf("%s\n","Wrong UTF8 Encoding" );
