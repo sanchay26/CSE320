@@ -2,9 +2,9 @@ CC = gcc
 CFLAGS = -g -Wall -Werror -pedantic -Wextra -I include
 
 
-all: clean kaka
+all: clean utf
 
-kaka:
+utf:
 	@mkdir -p build
 	@mkdir -p bin
 	

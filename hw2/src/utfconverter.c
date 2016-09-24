@@ -3,25 +3,88 @@
 #include <sys/times.h>
 
 char* filename;
+char* outfile=NULL;
 endianness source;
 endianness conversion;
 int utf8;
+int outfd = STDOUT_FILENO;
 int rv;
 int verbosity = 0;
-
+int someflag = 0;
+/*static clock_t st_time;
+static clock_t en_time;
+static struct tms st_read;
+static struct tms en_read;
+static struct tms st_write;
+static struct tms en_write;
+static struct tms st_convert;
+static struct tms en_convert;*/
 int main(int argc, char** argv)
 {
 	/* After calling parse_args(), filename and conversion should be set. */
 	int fd;
 	unsigned char buf[4];
-	
+	unsigned char buf1[4];
+	unsigned char newline[2];
 	Glyph* glyph = malloc(sizeof(Glyph));
 
+	newline[0]= 0x0a;
+	newline[1]= 0x00;
+
+	buf1[0]=0;
+	buf1[1]=0;
+
+	
 	parse_args(argc, argv);
 
 	
 	fd = open(filename, O_RDONLY); 
-	 
+
+	/*Output Ridirection stuff*/
+
+	if(outfile!=NULL){
+		
+		outfd = open(outfile,O_CREAT|O_RDWR|O_APPEND,0666); 
+		
+		if((rv = read(outfd, &buf1[0], 1)) == 1){
+
+			if((rv = read(outfd, &buf1[1], 1)) == 1){
+
+					if(buf1[0] == 0xff && buf1[1] == 0xfe){
+
+						if(conversion == BIG){
+							someflag = 1;
+							quit_converter(NO_FD);
+							return EXIT_FAILURE;
+						}
+						else{
+							write(outfd,&newline[0],1);
+							write(outfd,&newline[1],1);
+						}
+						
+					}
+					else if(buf1[0] == 0xfe && buf1[1] == 0xff){
+						/*BOM BIG and conversion little break*/
+						if(conversion == LITTLE){
+							someflag = 1;
+							quit_converter(NO_FD);
+							return EXIT_FAILURE;
+						}
+						else{
+							write(outfd,&newline[1],1);
+							write(outfd,&newline[0],1);
+						}
+					}					
+
+			}			
+			else{
+				//Only one byte in the file EXIT PROGRAMME
+				quit_converter(NO_FD);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
 	buf[0]=0;
 	buf[1]=0;
 	buf[2]=0;
@@ -31,7 +94,7 @@ int main(int argc, char** argv)
 	/*test = open("rsrc/test.txt", O_CREAT | O_WRONLY);*/
 	/* Handle BOM bytes for UTF16 specially. 
          * Read our values into the first and second elements. */
-	if((rv = read(fd, &buf[0], 1)) == 1 && (rv = read(fd, &buf[1], 1)) == 1){ 
+	if((rv = read(fd, &buf[0], 1)) == 1 && (rv = read(fd, &buf[1], 1)) == 1 && someflag == 0 ){ 
 		
 		/********Here starts UTF-8 Stuff ********/
 
@@ -40,7 +103,6 @@ int main(int argc, char** argv)
 			if((rv = read(fd,&buf[2],1)==1)){
 
 				if(buf[2]==0xbf){
-					printf("%s\n","I am UTF8");
 					utf8 = 1;
 				}
 			}
@@ -51,12 +113,12 @@ int main(int argc, char** argv)
 			/*file is little endian*/
 			source = LITTLE;
 			if (source == conversion){
-				write(STDOUT_FILENO, &buf[0], 1);
-				write(STDOUT_FILENO,&buf[1],1);
+				write(outfd, &buf[0], 1);
+				write(outfd,&buf[1],1);
 			}
 			else{
-				write(STDOUT_FILENO, &buf[1], 1);
-				write(STDOUT_FILENO,&buf[0],1);
+				write(outfd, &buf[1], 1);
+				write(outfd,&buf[0],1);
 			}
 		} 
 
@@ -64,12 +126,12 @@ int main(int argc, char** argv)
 			/*file is big endian*/
 			source = BIG;
 			if (source==conversion){
-				write(STDOUT_FILENO, &buf[0], 1);
-				write(STDOUT_FILENO,&buf[1],1);
+				write(outfd, &buf[0], 1);
+				write(outfd,&buf[1],1);
 			}
 			else{
-				write(STDOUT_FILENO, &buf[1], 1);
-				write(STDOUT_FILENO,&buf[0],1);
+				write(outfd, &buf[1], 1);
+				write(outfd,&buf[0],1);
 			}
 		} 
 
@@ -81,9 +143,7 @@ int main(int argc, char** argv)
 		}
 
 	}
-	if(verbosity>=1){
-		verbosity1();
-	}
+	
 
 	/* Now deal with the rest of the bytes.*/
 	if(utf8==1){
@@ -91,12 +151,12 @@ int main(int argc, char** argv)
 		bom[0]= 0xff;
 		bom[1]= 0xfe;
 		if(conversion== LITTLE){
-			write(STDOUT_FILENO, &bom[0], 1);
-			write(STDOUT_FILENO, &bom[1], 1);
+			write(outfd, &bom[0], 1);
+			write(outfd, &bom[1], 1);
 		}
 		else if (conversion== BIG){
-			write(STDOUT_FILENO, &bom[1], 1);
-			write(STDOUT_FILENO, &bom[0], 1);
+			write(outfd, &bom[1], 1);
+			write(outfd, &bom[0], 1);
 		}
 		while((rv = read(fd, &buf[0], 1)) == 1){
 			write_glyph(mock_glyph(glyph,buf,source,&fd));
@@ -105,7 +165,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1 ){
+		while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1 && someflag==0){
 
 			if(source == LITTLE){
 				write_glyph(fill_glyph(glyph, buf, source, &fd));	
@@ -114,12 +174,12 @@ int main(int argc, char** argv)
 			else if(source == BIG) {
 				write_glyph(swap_endianness(fill_glyph(glyph, buf, source, &fd)));
 			}
-			if(utf8==1){
-				mock_glyph(glyph, buf, source, &fd);
-			}
 		}
 	}
-	
+	if(verbosity>=1){
+		verbosity1();
+	}
+	free(&glyph->bytes); 
 	quit_converter(NO_FD);
 	return 0;
 }
@@ -209,25 +269,25 @@ void write_glyph(Glyph* glyph)
 	if(conversion == LITTLE){
 		
 		if(glyph->surrogate){
-		write(STDOUT_FILENO, glyph->bytes, SURROGATE_SIZE);
+		write(outfd, glyph->bytes, SURROGATE_SIZE);
 		} 
 		
 		else {
-		write(STDOUT_FILENO, glyph->bytes, NON_SURROGATE_SIZE);
+		write(outfd, glyph->bytes, NON_SURROGATE_SIZE);
 		}
 	}
 	if(conversion == BIG){
 		
 		if(glyph->surrogate){
-		write(STDOUT_FILENO, &glyph->bytes[1],1);
-		write(STDOUT_FILENO, &glyph->bytes[0],1);
-		write(STDOUT_FILENO, &glyph->bytes[3],1);
-		write(STDOUT_FILENO, &glyph->bytes[2],1);
+		write(outfd, &glyph->bytes[1],1);
+		write(outfd, &glyph->bytes[0],1);
+		write(outfd, &glyph->bytes[3],1);
+		write(outfd, &glyph->bytes[2],1);
 		} 
 		
 		else {
-		write(STDOUT_FILENO, &glyph->bytes[1], 1);
-		write(STDOUT_FILENO, &glyph->bytes[0], 1);
+		write(outfd, &glyph->bytes[1], 1);
+		write(outfd, &glyph->bytes[0], 1);
 		}
 	}
 }
@@ -282,6 +342,14 @@ void parse_args(int argc,char** argv)
 	if(optind < argc){
 		filename= malloc((strlen(argv[optind])+1)*sizeof(char));
 		strcpy(filename, argv[optind]);
+		if(argv[optind+1]!=NULL){
+			outfile= malloc((strlen(argv[optind+1])+1)*sizeof(char));
+			strcpy(outfile,argv[optind+1]);
+			if(strcmp(filename,outfile)==0){
+				printf("%s\n","Same File");
+				quit_converter(NO_FD);
+			}
+		}
 		if (!file_exist (filename))
 		{
   			printf("%s\n","File Doesnt Exists" );
