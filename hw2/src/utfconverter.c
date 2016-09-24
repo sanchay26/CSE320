@@ -12,6 +12,9 @@ int rv;
 int verbosity = 0;
 int someflag = 0;
 int visited = 0;
+int totalascii = 0;
+int totalsurrogate = 0;
+int totalglyphs = 0;
 /*static clock_t st_time;
 static clock_t en_time;
 static struct tms st_read;
@@ -178,7 +181,10 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	if(verbosity>=1){
+	if(verbosity>1){
+		verbosity2();
+	}
+	if(verbosity==1){
 		verbosity1();
 	}
 	free(&glyph->bytes); 
@@ -267,20 +273,29 @@ int file_exist (char *filename)
 }
 
 void write_glyph(Glyph* glyph)
-{
+{	
+	
 	if(conversion == LITTLE){
+
+		totalglyphs = totalglyphs+1;
 		
 		if(glyph->surrogate){
+
+		totalsurrogate = totalsurrogate +1;
 		write(outfd, glyph->bytes, SURROGATE_SIZE);
 		} 
 		
 		else {
+			if(glyph->bytes[1]==0x00){
+				totalascii = totalascii+1;
+			}
 		write(outfd, glyph->bytes, NON_SURROGATE_SIZE);
 		}
 	}
 	if(conversion == BIG){
-		
+		totalglyphs= totalglyphs+1;
 		if(glyph->surrogate){
+		totalsurrogate = totalsurrogate +1;
 		write(outfd, &glyph->bytes[1],1);
 		write(outfd, &glyph->bytes[0],1);
 		write(outfd, &glyph->bytes[3],1);
@@ -288,6 +303,9 @@ void write_glyph(Glyph* glyph)
 		} 
 		
 		else {
+			if(glyph->bytes[1]==0x00){
+				totalascii = totalascii+1;
+			}
 		write(outfd, &glyph->bytes[1], 1);
 		write(outfd, &glyph->bytes[0], 1);
 		}
@@ -437,6 +455,14 @@ void verbosity1(void){
 	printf("Operating System: %s\n", unameData.sysname);
 
 }
+void verbosity2(){
+	int asciipercent = ((float)totalascii/(float)(totalglyphs)) *100;
+	int surrogatepercent = ((float)totalsurrogate/(float)totalglyphs)*100;
+	printf("	ASCII: %d%%\n",asciipercent);
+	printf("	Surrogates: %d%%\n",surrogatepercent);
+	printf("	Glyphs: %d\n",totalglyphs);
+
+}
 Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 	
 	unsigned int  bits = 0; 
@@ -482,7 +508,6 @@ Glyph* mock_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd){
 		}
 		bits=0;
 		bits |= (data[0] >> 4);
-		printf("%d\n",bits);
 		if(bits == 0x0e){
 			/*Glyph is encoded in three bytes*/
 			if((rv=read(*fd, &data[1], 1)) == 1 && (rv=read(*fd, &data[2], 1))==1){  

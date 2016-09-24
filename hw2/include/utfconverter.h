@@ -112,3 +112,4 @@ void print_help P((void));
 void quit_converter P((int));
 
 void verbosity1();
+void verbosity2();
