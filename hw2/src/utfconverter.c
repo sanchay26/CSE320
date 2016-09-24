@@ -11,6 +11,7 @@ int outfd = STDOUT_FILENO;
 int rv;
 int verbosity = 0;
 int someflag = 0;
+int visited = 0;
 /*static clock_t st_time;
 static clock_t en_time;
 static struct tms st_read;
@@ -27,7 +28,6 @@ int main(int argc, char** argv)
 	unsigned char buf1[4];
 	unsigned char newline[2];
 	Glyph* glyph = malloc(sizeof(Glyph));
-
 	newline[0]= 0x0a;
 	newline[1]= 0x00;
 
@@ -52,6 +52,7 @@ int main(int argc, char** argv)
 
 					if(buf1[0] == 0xff && buf1[1] == 0xfe){
 
+						visited =1;
 						if(conversion == BIG){
 							someflag = 1;
 							quit_converter(NO_FD);
@@ -65,6 +66,7 @@ int main(int argc, char** argv)
 					}
 					else if(buf1[0] == 0xfe && buf1[1] == 0xff){
 						/*BOM BIG and conversion little break*/
+						visited =1;
 						if(conversion == LITTLE){
 							someflag = 1;
 							quit_converter(NO_FD);
@@ -78,7 +80,7 @@ int main(int argc, char** argv)
 
 			}			
 			else{
-				//Only one byte in the file EXIT PROGRAMME
+				/*Only one byte in the file EXIT PROGRAMME*/
 				quit_converter(NO_FD);
 				return EXIT_FAILURE;
 			}
@@ -109,7 +111,7 @@ int main(int argc, char** argv)
 		}
 		/*************************/
 
-		else if(buf[0] == 0xff && buf[1] == 0xfe){
+		else if(buf[0] == 0xff && buf[1] == 0xfe && visited ==0){
 			/*file is little endian*/
 			source = LITTLE;
 			if (source == conversion){
@@ -122,7 +124,7 @@ int main(int argc, char** argv)
 			}
 		} 
 
-		else if(buf[0] == 0xfe && buf[1] == 0xff){
+		else if(buf[0] == 0xfe && buf[1] == 0xff && visited==0){
 			/*file is big endian*/
 			source = BIG;
 			if (source==conversion){
@@ -150,11 +152,11 @@ int main(int argc, char** argv)
 		unsigned char bom[2];
 		bom[0]= 0xff;
 		bom[1]= 0xfe;
-		if(conversion== LITTLE){
+		if(conversion== LITTLE && visited==0){
 			write(outfd, &bom[0], 1);
 			write(outfd, &bom[1], 1);
 		}
-		else if (conversion== BIG){
+		else if (conversion== BIG && visited==0){
 			write(outfd, &bom[1], 1);
 			write(outfd, &bom[0], 1);
 		}
@@ -325,7 +327,8 @@ void parse_args(int argc,char** argv)
 					
 				}
 				else {
-					printf("%s\n","Wrong Arguments" );
+					printf("%s\n","Wrong Arguments");
+					print_help();
 				}
 				break;
 			case 'v':
@@ -364,7 +367,6 @@ void parse_args(int argc,char** argv)
 	if(endian_convert == NULL){
 		fprintf(stderr, "Converson mode not given.\n");
 		print_help();
-		printf("%s\n","Something");
 		quit_converter(NO_FD);
 	}
 	
