@@ -205,6 +205,7 @@ int main(int argc, char** argv)
 		}
 	}
 	if(verbosity>1){
+		verbosity1();
 		verbosity2();
 	}
 	if(verbosity==1){
@@ -422,7 +423,8 @@ void print_help(void) {
 }
 
 void quit_converter(int fd)
-{
+{	free(outfile);
+	free(filename);
 	close(STDERR_FILENO);
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
@@ -454,6 +456,9 @@ void verbosity1(void){
 	if (source == BIG){
 		input = "UTF-16BE";
 	}
+	if(utf8 ==1){
+		input = "UTF-8";
+	}
 
 	if(conversion == LITTLE){
 		output = "UTF-16LE";
@@ -470,24 +475,32 @@ void verbosity1(void){
 	inputfilesize=cat.st_size;
 	ptr = realpath(buffer, actualpath);
 
-	printf("Input file size: %d\n",(int)inputfilesize);
-	printf("Input file path: %s\n",ptr);
-	printf("Input file encoding: %s\n",input);
-	printf("Output file encoding: %s\n",output);
-	printf("Hostmachine: %s\n", hostname);
-	printf("Operating System: %s\n", unameData.sysname);
+	printf("	Input file size: %d kb\n",(int)inputfilesize);
+	printf("	Input file path: %s\n",ptr);
+	printf("	Input file encoding: %s\n",input);
+	printf("	Output file encoding: %s\n",output);
+	printf("	Hostmachine: %s\n", hostname);
+	printf("	Operating System: %s\n", unameData.sysname);
 
 }
 void verbosity2(){
+	int asciipercent=0;
+	int surrogatepercent=0;
 
-	printf("Real Time: %f, User Time %f, System Time %f\n",
+	printf("	Reading: real=%f, user=%f, sys%f\n",
         (float)(en_read_time - st_read_time),
         (float)(en_read.tms_utime - st_read.tms_utime),
         (float)(en_read.tms_stime - st_read.tms_stime));
-
-	
-	int asciipercent = ((float)totalascii/(float)(totalglyphs)) *100;
-	int surrogatepercent = ((float)totalsurrogate/(float)totalglyphs)*100;
+	printf("	Converting: real=%f, user=%f, sys%f\n",
+        (float)(en_convert_time - st_convert_time),
+        (float)(en_convert.tms_utime - st_convert.tms_utime),
+        (float)(en_convert.tms_stime - st_convert.tms_stime));
+	printf("	Writing: real=%f, user=%f, sys%f\n",
+        (float)(en_write_time - st_write_time),
+        (float)(en_write.tms_utime - st_write.tms_utime),
+        (float)(en_write.tms_stime - st_write.tms_stime));
+	asciipercent = ((float)totalascii/(float)(totalglyphs)) *100;
+	surrogatepercent = ((float)totalsurrogate/(float)totalglyphs)*100;
 	printf("	ASCII:%d%%\n",asciipercent);
 	printf("	Surrogates: %d%%\n",surrogatepercent);
 	printf("	Glyphs: %d\n",totalglyphs);
