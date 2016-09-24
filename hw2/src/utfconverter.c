@@ -35,6 +35,7 @@ int main(int argc, char** argv)
 	unsigned char buf1[4];
 	unsigned char newline[2];
 	Glyph* glyph = malloc(sizeof(Glyph));
+	
 	newline[0]= 0x0a;
 	newline[1]= 0x00;
 
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
 
 	visited =0;
 	parse_args(argc, argv);
-
+	
 	
 	fd = open(filename, O_RDONLY); 
 
@@ -60,6 +61,7 @@ int main(int argc, char** argv)
 					if(buf1[0] == 0xff && buf1[1] == 0xfe){
 
 						visited =1;
+						totalglyphs = totalglyphs+1;
 						if(conversion == BIG){
 							printf("%s\n","Mismatch BOM" );
 							quit_converter(NO_FD);
@@ -74,6 +76,7 @@ int main(int argc, char** argv)
 					else if(buf1[0] == 0xfe && buf1[1] == 0xff){
 						/*BOM BIG and conversion little break*/
 						visited =1;
+						totalglyphs = totalglyphs+1;
 						if(conversion == LITTLE){
 							printf("%s\n","Mismatch BOM" );
 							quit_converter(NO_FD);
@@ -123,10 +126,12 @@ int main(int argc, char** argv)
 			source = LITTLE;
 			if(visited == 0){
 				if (source == conversion){
+					totalglyphs = totalglyphs+1;
 					write(outfd, &buf[0], 1);
 					write(outfd,&buf[1],1);
 				}
 				else{
+					totalglyphs = totalglyphs+1;
 					write(outfd, &buf[1], 1);
 					write(outfd,&buf[0],1);
 				}	
@@ -140,10 +145,12 @@ int main(int argc, char** argv)
 
 			if(visited == 0){
 				if (source==conversion){
+					totalglyphs = totalglyphs+1;
 					write(outfd, &buf[0], 1);
 					write(outfd,&buf[1],1);
 				}
 				else{
+					totalglyphs = totalglyphs+1;
 					write(outfd, &buf[1], 1);
 					write(outfd,&buf[0],1);
 				}
@@ -156,6 +163,7 @@ int main(int argc, char** argv)
 			free(&glyph->bytes); 
 			fprintf(stderr, "File has no BOM.\n");
 			quit_converter(NO_FD); 
+			return EXIT_FAILURE;
 		}
 	}
 	
@@ -176,8 +184,18 @@ int main(int argc, char** argv)
 		while((rv = read(fd, &buf[0], 1)) == 1){
 			write_glyph(mock_glyph(glyph,buf,source,&fd));
 		}
-
+		if(verbosity>1){
+		verbosity1();
+		verbosity2();
+		}
+		if(verbosity==1){
+		verbosity1();
+		}
+		free(&glyph->bytes); 
+		quit_converter(NO_FD);
+		return 0;
 	}
+
 	else
 	{
 		while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1 && someflag==0){
@@ -292,7 +310,7 @@ Glyph* fill_glyph (Glyph* glyph,unsigned char data[4],endianness end,int* fd)
 
 int file_exist (char *filename)
 {
-  struct stat   buffer;   
+  struct stat   buffer;  
   return (stat (filename, &buffer) == 0);
 }
 
@@ -310,10 +328,11 @@ void write_glyph(Glyph* glyph)
 		} 
 		
 		else {
+			
 			if(glyph->bytes[1]==0x00){
 				totalascii = totalascii+1;
 			}
-		write(outfd, glyph->bytes, NON_SURROGATE_SIZE);
+			write(outfd, glyph->bytes, NON_SURROGATE_SIZE);
 		}
 	}
 	if(conversion == BIG){
@@ -343,7 +362,6 @@ void parse_args(int argc,char** argv)
 
 	static struct option long_options[] = {
 		{"help", no_argument, 0, 'h'},
-		{"h", no_argument, 0, 'h'},
 		{"v",no_argument,0,'v'},
 		{"UTF",required_argument,NULL,'u'},
 		{0, 0, 0, 0}
@@ -378,7 +396,7 @@ void parse_args(int argc,char** argv)
 				break;
 			default:
 				fprintf(stderr, "Unrecognized argument.\n");
-				quit_converter(NO_FD);
+				print_help();
 				break;
 		}
 
@@ -399,6 +417,7 @@ void parse_args(int argc,char** argv)
 		{
   			printf("%s\n","File Doesnt Exists" );
 			print_help();
+			
   		}
 	} 
 	else {
@@ -411,7 +430,6 @@ void parse_args(int argc,char** argv)
 		print_help();
 		quit_converter(NO_FD);
 	}
-	
 }
 
 void print_help(void) {
@@ -469,9 +487,9 @@ void verbosity1(void){
 
 	gethostname(hostname, sizeof (hostname));
 	inputfilesize=0;
-	 if(stat(filename,&cat)!=0){
+	if(stat(filename,&cat)!=0){
 	printf("%s\n","ERROR" );
-	 }
+	}
 	inputfilesize=cat.st_size;
 	ptr = realpath(buffer, actualpath);
 
@@ -487,7 +505,7 @@ void verbosity2(){
 	int asciipercent=0;
 	int surrogatepercent=0;
 
-	printf("	Reading: real=%f, user=%f, sys%f\n",
+	printf("	Reading: real=%f, user=%f, sys=%f\n",
         (float)(en_read_time - st_read_time),
         (float)(en_read.tms_utime - st_read.tms_utime),
         (float)(en_read.tms_stime - st_read.tms_stime));
