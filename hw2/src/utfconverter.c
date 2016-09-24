@@ -15,14 +15,18 @@ int visited = 0;
 int totalascii = 0;
 int totalsurrogate = 0;
 int totalglyphs = 0;
-/*static clock_t st_time;
-static clock_t en_time;
+static clock_t st_read_time;
+static clock_t en_read_time;
+static clock_t st_convert_time;
+static clock_t en_convert_time;
+static clock_t st_write_time;
+static clock_t en_write_time;
 static struct tms st_read;
 static struct tms en_read;
 static struct tms st_write;
 static struct tms en_write;
 static struct tms st_convert;
-static struct tms en_convert;*/
+static struct tms en_convert;
 int main(int argc, char** argv)
 {
 	/* After calling parse_args(), filename and conversion should be set. */
@@ -37,7 +41,7 @@ int main(int argc, char** argv)
 	buf1[0]=0;
 	buf1[1]=0;
 
-	
+	visited =0;
 	parse_args(argc, argv);
 
 	
@@ -57,7 +61,7 @@ int main(int argc, char** argv)
 
 						visited =1;
 						if(conversion == BIG){
-							someflag = 1;
+							printf("%s\n","Mismatch BOM" );
 							quit_converter(NO_FD);
 							return EXIT_FAILURE;
 						}
@@ -71,7 +75,7 @@ int main(int argc, char** argv)
 						/*BOM BIG and conversion little break*/
 						visited =1;
 						if(conversion == LITTLE){
-							someflag = 1;
+							printf("%s\n","Mismatch BOM" );
 							quit_converter(NO_FD);
 							return EXIT_FAILURE;
 						}
@@ -99,7 +103,7 @@ int main(int argc, char** argv)
 	/*test = open("rsrc/test.txt", O_CREAT | O_WRONLY);*/
 	/* Handle BOM bytes for UTF16 specially. 
          * Read our values into the first and second elements. */
-	if((rv = read(fd, &buf[0], 1)) == 1 && (rv = read(fd, &buf[1], 1)) == 1 && someflag == 0 ){ 
+	if((rv = read(fd, &buf[0], 1)) == 1 && (rv = read(fd, &buf[1], 1)) == 1){ 
 		
 		/********Here starts UTF-8 Stuff ********/
 
@@ -114,30 +118,37 @@ int main(int argc, char** argv)
 		}
 		/*************************/
 
-		else if(buf[0] == 0xff && buf[1] == 0xfe && visited ==0){
+		else if(buf[0] == 0xff && buf[1] == 0xfe){
 			/*file is little endian*/
 			source = LITTLE;
-			if (source == conversion){
-				write(outfd, &buf[0], 1);
-				write(outfd,&buf[1],1);
+			if(visited == 0){
+				if (source == conversion){
+					write(outfd, &buf[0], 1);
+					write(outfd,&buf[1],1);
+				}
+				else{
+					write(outfd, &buf[1], 1);
+					write(outfd,&buf[0],1);
+				}	
 			}
-			else{
-				write(outfd, &buf[1], 1);
-				write(outfd,&buf[0],1);
-			}
+			
 		} 
 
-		else if(buf[0] == 0xfe && buf[1] == 0xff && visited==0){
+		else if(buf[0] == 0xfe && buf[1] == 0xff){
 			/*file is big endian*/
 			source = BIG;
-			if (source==conversion){
-				write(outfd, &buf[0], 1);
-				write(outfd,&buf[1],1);
+
+			if(visited == 0){
+				if (source==conversion){
+					write(outfd, &buf[0], 1);
+					write(outfd,&buf[1],1);
+				}
+				else{
+					write(outfd, &buf[1], 1);
+					write(outfd,&buf[0],1);
+				}
 			}
-			else{
-				write(outfd, &buf[1], 1);
-				write(outfd,&buf[0],1);
-			}
+			
 		} 
 
 		else {
@@ -146,7 +157,6 @@ int main(int argc, char** argv)
 			fprintf(stderr, "File has no BOM.\n");
 			quit_converter(NO_FD); 
 		}
-
 	}
 	
 
@@ -173,11 +183,24 @@ int main(int argc, char** argv)
 		while((rv = read(fd, &buf[0], 1)) == 1 &&  (rv = read(fd, &buf[1], 1)) == 1 && someflag==0){
 
 			if(source == LITTLE){
-				write_glyph(fill_glyph(glyph, buf, source, &fd));	
+				st_read_time = times(&st_read);
+				fill_glyph(glyph, buf, source, &fd);
+				en_read_time = times(&en_read);
+				st_write_time = times(&st_write);
+				write_glyph(glyph);	
+				en_write_time = times(&en_write);
 			}
 
 			else if(source == BIG) {
-				write_glyph(swap_endianness(fill_glyph(glyph, buf, source, &fd)));
+				st_read_time = times(&st_read);
+				fill_glyph(glyph, buf, source, &fd);
+				en_read_time = times(&en_read);
+				st_convert_time = times(&st_convert);
+				swap_endianness(glyph);
+				en_convert_time = times(&en_convert);
+				st_write_time = times(&st_write);
+				write_glyph(glyph);
+				en_write_time = times(&en_write);
 			}
 		}
 	}
@@ -456,9 +479,16 @@ void verbosity1(void){
 
 }
 void verbosity2(){
+
+	printf("Real Time: %f, User Time %f, System Time %f\n",
+        (float)(en_read_time - st_read_time),
+        (float)(en_read.tms_utime - st_read.tms_utime),
+        (float)(en_read.tms_stime - st_read.tms_stime));
+
+	
 	int asciipercent = ((float)totalascii/(float)(totalglyphs)) *100;
 	int surrogatepercent = ((float)totalsurrogate/(float)totalglyphs)*100;
-	printf("	ASCII: %d%%\n",asciipercent);
+	printf("	ASCII:%d%%\n",asciipercent);
 	printf("	Surrogates: %d%%\n",surrogatepercent);
 	printf("	Glyphs: %d\n",totalglyphs);
 
