@@ -1,3 +1,5 @@
+Sanchay Agrawal
+110630065
 # Homework 3 - Memory Allocator
 ## Tested with criterion libraries
 
