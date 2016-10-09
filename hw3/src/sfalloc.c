@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
+#include "helper.h"
 #include "sfmm.h"
 
 #include <stdio.h>
@@ -85,6 +86,7 @@ int main(int argc, char *argv[]) {
     // Initialize the custom allocator
     sf_mem_init(MAX_HEAP_SIZE);
 
+    //sf_malloc(15);
     // Tell the user about the fields
     info("Initialized heap with %dmb of heap space.\n", MAX_HEAP_SIZE >> 20);
     press_to_cont();
