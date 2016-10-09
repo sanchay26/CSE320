@@ -10,3 +10,7 @@ void placeFit(void *bp,size_t alignedsize,size_t padding);
 void setheader(void *bp, size_t alignedsize, size_t padding);
 
 void setfooter(void *bp, size_t alignedsize);
+
+void setfreeheader(void *bp, size_t alignedsize);
+
+void setfreefooter(void *bp, size_t alignedsize);

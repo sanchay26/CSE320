@@ -42,8 +42,8 @@ void *sf_malloc(size_t size){
 			sf_footer *first_footer = (sf_footer*) currentlocation;
 			first_footer->alloc = 0;
 			first_footer->block_size = (4096>>4);
-			
-		}
+	}
+	
 	if((bp = firstFit(alignedsize))){
 		placeFit(bp,alignedsize,padding);
 		return bp+8;
@@ -69,15 +69,24 @@ void* firstFit(size_t alignedsize){
 
 void placeFit( void *bp , size_t alignedsize, size_t padding){
 
-	//sf_free_header* oldfree = (sf_free_header*) bp;
+	sf_free_header* oldfree = (sf_free_header*) bp;
 
-	
-	//setting the header to allocated.
-	setheader(bp,alignedsize,padding);
-	setfooter(bp,alignedsize);
-	
-	
+	size_t freesize = oldfree->header.block_size<<4;
 
+	//split the blocks
+
+	if((freesize-alignedsize) > 32){
+		setheader(bp,alignedsize,padding);
+		setfooter(bp,alignedsize);
+		//removeBlock(bp)
+		bp = bp + alignedsize;
+		setfreeheader(bp,(freesize-alignedsize));
+		setfreefooter(bp,(freesize-alignedsize));
+	}
+
+	else{
+		//Splinters And no space to store anything 
+	}
 }
 
 void setheader(void *bp, size_t alignedsize, size_t padding){
@@ -87,16 +96,48 @@ void setheader(void *bp, size_t alignedsize, size_t padding){
 	fit->padding_size = padding;
 }
 
+void setfreeheader(void *bp, size_t alignedsize){
+	sf_free_header* fit = (sf_free_header*) bp;
+	fit->header.alloc = 0;
+	fit->header.block_size = alignedsize>>4;
+	fit->header.padding_size = 0;
+	freelist_head = fit;
+}
+
 void setfooter(void *bp, size_t alignedsize){
 	void * currentlocation = bp;
-	currentlocation = currentlocation +(alignedsize)-8;
+	currentlocation = currentlocation+alignedsize-8;
 	sf_footer* footer = (sf_footer*) currentlocation;
 	footer->alloc = 1;
 	footer->block_size = alignedsize>>4;
 }
 
+void setfreefooter(void *bp, size_t alignedsize){
+	void * currentlocation = bp;
+	currentlocation = currentlocation +(alignedsize)-8;
+	sf_footer* footer = (sf_footer*) currentlocation;
+	footer->alloc = 0;
+	footer->block_size = alignedsize>>4;
+}
+
 
 void sf_free(void *ptr){
+
+	if(!ptr) return;
+
+	ptr = ptr-8;
+
+	sf_header *free = (sf_header*)ptr;
+
+	size_t freesize = free->block_size<<4;
+
+	setfreeheader(ptr, freesize);
+
+	setfreefooter(ptr, freesize);
+	sf_free_header  = (sf_free_header*)ptr;
+	freelist_head->prev = ptr;
+	ptr->next = freelist_head;
+	freelist_head =ptr;
 
 }
 
