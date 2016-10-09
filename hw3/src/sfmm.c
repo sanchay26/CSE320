@@ -15,8 +15,11 @@ sf_free_header* freelist_head = NULL;
 
 void *sf_malloc(size_t size){
 	
+	//Aligning the size
+
 	size_t alignedsize = alignsize(size)+16;
 
+	// getting the padded size.
 	size_t padding = alignedsize - size -16;
 
 	void *bp;
@@ -59,23 +62,37 @@ void* firstFit(size_t alignedsize){
 		if(alignedsize < (size_t)free->header.block_size)
 		return free;
 	}
+	//fit not found ask for new page.
 	// Set the error flag.
 	return NULL; //No fit found 
 }
 
 void placeFit( void *bp , size_t alignedsize, size_t padding){
 
-	sf_free_header* oldfree = (sf_free_header*) bp;
+	//sf_free_header* oldfree = (sf_free_header*) bp;
 
-	void * currentlocation = bp;
-	//currentlocation = currentlocation + oldfree
-
+	
 	//setting the header to allocated.
+	setheader(bp,alignedsize,padding);
+	setfooter(bp,alignedsize);
+	
+	
 
+}
+
+void setheader(void *bp, size_t alignedsize, size_t padding){
 	sf_header* fit = (sf_header*) bp;
 	fit->alloc = 1;
 	fit->block_size = alignedsize>>4;
 	fit->padding_size = padding;
+}
+
+void setfooter(void *bp, size_t alignedsize){
+	void * currentlocation = bp;
+	currentlocation = currentlocation +(alignedsize)-8;
+	sf_footer* footer = (sf_footer*) currentlocation;
+	footer->alloc = 1;
+	footer->block_size = alignedsize>>4;
 }
 
 
