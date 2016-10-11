@@ -174,29 +174,41 @@ void coalesce(void *bp){
 	sf_free_header* freed = (sf_free_header*)bp;
 
 	size_t prev_alloc = getAlloc(prev_block(bp));
-	//printf("%p****currentblock\n",bp);
-	//printf("%p***previous bl0ck\n",prev_block(bp));
-	//printf("%p****nextblock\n",next_block(bp));
-	//printf("%zu***previousallocated\n",prev_alloc);
+	
 	size_t next_alloc = getAlloc(next_block(bp));
-	//printf("%zu***nextallocated\n",next_alloc);
+
+
 	size_t size = freed->header.block_size<<4;
 	
-	//case 1 extend the block lefward 
+	/*case1*/
 	if(prev_alloc && !next_alloc){
-		//printf("********I am here %zu\n",getSize(next_block(bp)) );
+		printf("%s\n","In case 1");
 		size = size + getSize(next_block(bp));
 		removeBlock(next_block(bp));
 		setfreeheader(bp,size); 
 		setfreefooter(bp,size);
 	}
+	/*case2*/
+	else if(!prev_alloc && next_alloc){
+		printf("%s\n","In case 2");
+		size = size + getSize(prev_block(bp));
+		bp = prev_block(bp);
+		removeBlock(bp);
+		setfreeheader(bp,size); 
+		setfreefooter(bp,size);
+	}
+	/*case3*/
 
+	// if(!prev_alloc && !next_alloc){
+	// 	printf("%s\n","In case 3");
+	// 	size = size + getSize(prev_block(bp)+ getSize(next_block(bp)));
+	// 	removeBlock(prev_block(bp));
+	// 	removeBlock(next_block(bp));
+	// 	bp = prev_block(bp);
+	// 	setfreeheader(bp,size);
+	// 	setfreefooter(bp,size);
+	// }
 
-	//case 2 extend the block rightward 
-	// if(!prev_alloc && next_alloc)
-
-	//case 3 extend the block in both direction 
-	// if(!prev_alloc && !next_alloc)
 	insertatfront(bp);
 }
 
@@ -208,11 +220,13 @@ void* next_block(void *bp){
 }
 
 void* prev_block(void *bp){
-	int *prev = (int*)bp;
+	int *prev = (int*)(bp-8);
 	size_t size = *prev & 0xfffffff0;
-	printf("%zu***here\n",size);
+	printf("%zu****size\n",size);
+	//printf("%zu***here\n",size);
 	void *prevblock = bp-size;
-	printf("%p***this is\n",prevblock);
+	printf("%p*****this is current\n",bp);
+	printf("%p***this is previous\n",prevblock);
 	return prevblock;
 }
 
