@@ -147,6 +147,7 @@ void sf_free(void *ptr){
 	setfreefooter(cloneptr, freesize);
 
 	coalesce(cloneptr);
+
 	// sf_free_header *ptr1= (sf_free_header*)ptr;
 	// freelist_head->prev = ptr1;
 	// ptr1->next = freelist_head;
@@ -214,7 +215,7 @@ void coalesce(void *bp){
 	}
 
 	insertatfront(bp);
-	printblocks();
+	//printblocks();
 }
 
 void* next_block(void *bp){
@@ -288,7 +289,7 @@ size_t alignsize(size_t size){
 
 void printblocks(){
 	void *ptr = startheap;
-	printf("%s\n","------------------------------------------------" );
+	printf("%s\n","-----------------------------------------------------------------------------------------------------" );
 	while(ptr<endheap){
 		
 		sf_blockprint(ptr);
@@ -296,5 +297,5 @@ void printblocks(){
 		ptr = ptr + (h2->block_size<<4);
 
 	}
-	printf("%s\n","----------------------------------------------" );
+	printf("%s\n","-----------------------------------------------------------------------------------------------------" );
 }
