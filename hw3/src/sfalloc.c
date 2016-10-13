@@ -86,25 +86,6 @@ int main(int argc, char *argv[]) {
     // Initialize the custom allocator
     sf_mem_init(MAX_HEAP_SIZE);
 
-    // int* value6 = sf_malloc(16);
-    // int* value7 = sf_malloc(32);
-    // int* value8 = sf_malloc(16);
-    // sf_free(value6);
-    // sf_free(value7);
-    // sf_free(value8);
-    // sf_varprint(value8+8);
-    //sf_blockprint(value6+8);
-    
-    //sf_varprint(value7+8);
-    //int* value8 = sf_malloc(16);
-    //sf_varprint(value8);
-    //sf_free(value6);
-    //sf_free(value7);
-
-    //sf_free(value8);
-    //sf_varprint(value6);
-    //sf_varprint(value8);
-
     // Tell the user about the fields
     info("Initialized heap with %dmb of heap space.\n", MAX_HEAP_SIZE >> 20);
     press_to_cont();
@@ -115,44 +96,40 @@ int main(int argc, char *argv[]) {
     printf("=== Test1: Allocation test ===\n");
     // Test #1: Allocate an integer
     int *value1 = sf_malloc(sizeof(int));
-    int *value2 = sf_malloc(sizeof(int));
-    int *value3 = sf_malloc(sizeof(int));
+    int *value9 = sf_malloc(sizeof(int));
+    int *value3= sf_malloc(sizeof(int));
     int *value4 = sf_malloc(sizeof(int));
     int *value5 = sf_malloc(sizeof(int));
     int *value6 = sf_malloc(sizeof(int));
     int *value7 = sf_malloc(sizeof(int));
-    sf_free(value1);
-    //printf("%s\n","***********************Printing after first free***************" );
-    //printblocks();
-    sf_free(value3);
-    //printf("%s\n","***********************Printing after third free***************" );
-    //printblocks();
-    sf_free(value5);
-    //printf("%s\n","***********************Printing after fifth free***************" );
-    //printblocks();
-    sf_free(value7);
-    sf_free(value6);
-    //printf("%s\n","***********************Printing after seventh free***************" );
-    printblocks();
-    //sf_free(value13);
-    //printblocks();
-    sf_varprint(value2);
+    sf_varprint(value1);
+    sf_varprint(value9);
+    sf_varprint(value3);
     sf_varprint(value4);
+    sf_varprint(value5);
     sf_varprint(value6);
-    //null_check(value1, sizeof(int));
-    //payload_check(value1);
+    sf_varprint(value7);
+    //sf_free(value1);
+    //sf_free(value3);
+    //sf_free(value5);
+    sf_free(value7);
+    //sf_free(value6);
+    printblocks();
+
+    null_check(value1, sizeof(int));
+    payload_check(value1);
     // Print out the allocator block
     //sf_varprint(value1);
     press_to_cont();
 
     // Now assign a value
-    // printf("=== Test2: Assignment test ===\n");
-    // info("Attempting to assign value1 = %d\n", VALUE1_VALUE);
-    // // Assign the value
-    // *value1 = VALUE1_VALUE;
-    // // Now check its value
-    // check_prim_contents(value1, VALUE1_VALUE, "%d", "value1");
-    // press_to_cont();
+    printf("=== Test2: Assignment test ===\n");
+    info("Attempting to assign value1 = %d\n", VALUE1_VALUE);
+    // Assign the value
+    *value1 = VALUE1_VALUE;
+    // Now check its value
+    check_prim_contents(value1, VALUE1_VALUE, "%d", "value1");
+    press_to_cont();
 
     // printf("=== Test3: Allocate a second variable ===\n");
     // info("Attempting to assign value2 = %ld\n", VALUE2_VALUE);
@@ -166,28 +143,28 @@ int main(int argc, char *argv[]) {
     // check_prim_contents(value2, VALUE2_VALUE, "%ld", "value2");
     // press_to_cont();
 
-    // printf("=== Test4: does value1 still equal %d ===\n", VALUE1_VALUE);
-    // check_prim_contents(value1, VALUE1_VALUE, "%d", "value1");
-    // press_to_cont();
+    printf("=== Test4: does value1 still equal %d ===\n", VALUE1_VALUE);
+    check_prim_contents(value1, VALUE1_VALUE, "%d", "value1");
+    press_to_cont();
 
-    // // Snapshot the freelist
-    // printf("=== Test5: Perform a snapshot ===\n");
-    // sf_snapshot(true);
-    // press_to_cont();
+    // Snapshot the freelist
+    printf("=== Test5: Perform a snapshot ===\n");
+    sf_snapshot(true);
+    press_to_cont();
 
-    // // Free a variable
-    // printf("=== Test6: Free a block and snapshot ===\n");
-    // info("Freeing value1...\n");
-    // sf_free(value1);
-    // sf_snapshot(true);
-    // press_to_cont();
+    // Free a variable
+    printf("=== Test6: Free a block and snapshot ===\n");
+    info("Freeing value1...\n");
+    sf_free(value1);
+    sf_snapshot(true);
+    press_to_cont();
 
-    // // Allocate more memory
-    // printf("=== Test7: 8192 byte allocation ===\n");
-    // void *memory = sf_malloc(8192);
-    // sf_varprint(memory);
-    // sf_free(memory);
-    // press_to_cont();
+    // Allocate more memory
+    printf("=== Test7: 8192 byte allocation ===\n");
+    void *memory = sf_malloc(8192);
+    sf_varprint(memory);
+    sf_free(memory);
+    press_to_cont();
 
     sf_mem_fini();
 
