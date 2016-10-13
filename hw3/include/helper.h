@@ -25,3 +25,7 @@ void* prev_block(void *bp);
 
 size_t getSize(void *bp);
 size_t getAlloc(void *bp);
+
+void insertatfront(void *bp);
+
+void printblocks();

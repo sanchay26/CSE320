@@ -12,6 +12,9 @@
 
 sf_free_header* freelist_head = NULL;
 
+void *startheap;
+void *endheap;
+
 
 void *sf_malloc(size_t size){
 	
@@ -31,15 +34,15 @@ void *sf_malloc(size_t size){
 	}
 		
 	else if(freelist_head == NULL){
-			printf("%s\n", "Something ");
-			freelist_head = (sf_free_header*) sf_sbrk(1);
+			endheap = sf_sbrk(1);
+			freelist_head = (sf_free_header*) (endheap-4096);
+			startheap = (endheap - 4096);
 			freelist_head->header.alloc = 0;
 			freelist_head->header.block_size = (4096>>4);
 			freelist_head->header.padding_size = 0;
 			freelist_head->next = NULL;
 			freelist_head->prev = NULL;
-			void *currentlocation = sf_sbrk(0);
-			currentlocation = currentlocation + 4088;
+			void *currentlocation = endheap - 8;
 			sf_footer *first_footer = (sf_footer*) currentlocation;
 			first_footer->alloc = 0;
 			first_footer->block_size = (4096>>4);
@@ -87,6 +90,7 @@ void placeFit( void *bp , size_t alignedsize, size_t padding){
 		bp = bp + alignedsize;
 		setfreeheader(bp,(freesize-alignedsize));
 		setfreefooter(bp,(freesize-alignedsize));
+		printf("%p****\n",bp);
 		coalesce(bp);
 		
 	}
@@ -132,17 +136,17 @@ void sf_free(void *ptr){
 
 	if(!ptr) return;
 
-	ptr = ptr-8;
+	void* cloneptr = ptr-8;
 
-	sf_header *free = (sf_header*)ptr;
+	sf_header *free = (sf_header*)cloneptr;
 
 	size_t freesize = free->block_size<<4;
 
-	setfreeheader(ptr, freesize);
+	setfreeheader(cloneptr, freesize);
 
-	setfreefooter(ptr, freesize);
+	setfreefooter(cloneptr, freesize);
 
-	coalesce(ptr);
+	coalesce(cloneptr);
 	// sf_free_header *ptr1= (sf_free_header*)ptr;
 	// freelist_head->prev = ptr1;
 	// ptr1->next = freelist_head;
@@ -173,9 +177,9 @@ void coalesce(void *bp){
 	
 	sf_free_header* freed = (sf_free_header*)bp;
 
-	size_t prev_alloc = getAlloc(prev_block(bp));
+	size_t prev_alloc = getAlloc(prev_block(bp)) || bp ==startheap;
 	
-	size_t next_alloc = getAlloc(next_block(bp));
+	size_t next_alloc = getAlloc(next_block(bp)) || bp==endheap;
 
 
 	size_t size = freed->header.block_size<<4;
@@ -199,34 +203,33 @@ void coalesce(void *bp){
 	}
 	/*case3*/
 
-	// if(!prev_alloc && !next_alloc){
-	// 	printf("%s\n","In case 3");
-	// 	size = size + getSize(prev_block(bp)+ getSize(next_block(bp)));
-	// 	removeBlock(prev_block(bp));
-	// 	removeBlock(next_block(bp));
-	// 	bp = prev_block(bp);
-	// 	setfreeheader(bp,size);
-	// 	setfreefooter(bp,size);
-	// }
+	if(!prev_alloc && !next_alloc){
+		printf("%s\n","In case 3");
+		size = size + getSize(prev_block(bp))+ getSize(next_block(bp));
+		removeBlock(prev_block(bp));
+		removeBlock(next_block(bp));
+		bp = prev_block(bp);
+		setfreeheader(bp,size);
+		setfreefooter(bp,size);
+	}
 
 	insertatfront(bp);
+	printblocks();
 }
 
 void* next_block(void *bp){
 	int *next = (int*)bp;
 	size_t size = *next & 0xfffffff0;
 	void *nextblock = bp+size;
+	printf("%p\n",next_block);
 	return nextblock;
 }
 
 void* prev_block(void *bp){
 	int *prev = (int*)(bp-8);
 	size_t size = *prev & 0xfffffff0;
-	printf("%zu****size\n",size);
-	//printf("%zu***here\n",size);
 	void *prevblock = bp-size;
-	printf("%p*****this is current\n",bp);
-	printf("%p***this is previous\n",prevblock);
+	printf("%p\n",prev_block);
 	return prevblock;
 }
 
@@ -244,6 +247,7 @@ size_t getSize(void *bp){
 
 void removeBlock(void *bp){
 
+	printf("%s\n","in remove block" );
 	sf_free_header *remove = (sf_free_header*)bp;
 
 	sf_free_header *previousfree = remove->prev;
@@ -280,4 +284,17 @@ size_t alignsize(size_t size){
 		size_t remainder = size % 16 ; 
 		return (size + 16 - remainder) ; 
 	}
+}
+
+void printblocks(){
+	void *ptr = startheap;
+	printf("%s\n","------------------------------------------------" );
+	while(ptr<endheap){
+		
+		sf_blockprint(ptr);
+		sf_header *h2= (sf_header*) ptr;
+		ptr = ptr + (h2->block_size<<4);
+
+	}
+	printf("%s\n","----------------------------------------------" );
 }

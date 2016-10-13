@@ -86,13 +86,25 @@ int main(int argc, char *argv[]) {
     // Initialize the custom allocator
     sf_mem_init(MAX_HEAP_SIZE);
 
-    //int* value6 = sf_malloc(sizeof(int));
-    //sf_varprint(value6);
-    //int* value7 = sf_malloc(sizeof(int));
-    //sf_varprint(value7);
-    //sf_free(value7);
+    int* value6 = sf_malloc(16);
+    int* value7 = sf_malloc(32);
+    int* value8 = sf_malloc(16);
+    sf_free(value6);
+    sf_free(value7);
+    sf_free(value8);
+    // sf_varprint(value8+8);
+    //sf_blockprint(value6+8);
+    
     //sf_varprint(value7+8);
-    //sf_varprint(value7);
+    //int* value8 = sf_malloc(16);
+    //sf_varprint(value8);
+    //sf_free(value6);
+    //sf_free(value7);
+
+    //sf_free(value8);
+    //sf_varprint(value6);
+    //sf_varprint(value8);
+
     // Tell the user about the fields
     info("Initialized heap with %dmb of heap space.\n", MAX_HEAP_SIZE >> 20);
     press_to_cont();
