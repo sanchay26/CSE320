@@ -14,7 +14,7 @@ sf_free_header* freelist_head = NULL;
 
 void *startheap;
 void *endheap;
-
+int begin = 0;
 
 void *sf_malloc(size_t size){
 	
@@ -25,7 +25,7 @@ void *sf_malloc(size_t size){
 	// getting the padded size.
 	size_t padding = alignedsize - size -16;
 
-	void *bp;
+	void *bp = NULL;
 	
 	if(size <= 0 || size > ((4096*4)-16)){
 		
@@ -33,7 +33,7 @@ void *sf_malloc(size_t size){
 		return NULL;
 	}
 		
-	else if(freelist_head == NULL){
+	else if(begin == 0){
 			endheap = sf_sbrk(1);
 			freelist_head = (sf_free_header*) (endheap-4096);
 			startheap = (endheap - 4096);
@@ -46,24 +46,52 @@ void *sf_malloc(size_t size){
 			sf_footer *first_footer = (sf_footer*) currentlocation;
 			first_footer->alloc = 0;
 			first_footer->block_size = (4096>>4);
+			begin =1;
 	}
+
+	while (bp == NULL){
+
+		bp = firstFit(alignedsize);
+
+		if(bp == NULL){
+
+			endheap = sf_sbrk(1);
+			if(endheap == NULL){
+				//--------------------------------------Set Error Number---------------------------------
+			}
+
+			void *location = endheap - 4096;
+			setfreeheader(location,4096);
+			setfreefooter(endheap-8,4096);
+			coalesce(location);
+
+		}
+
+		else{
+			placeFit(bp,alignedsize,padding);
+			return bp+8;}
+		}
 	
-	if((bp = firstFit(alignedsize))){
-		placeFit(bp,alignedsize,padding);
-		return bp+8;
-	}
+	// if((bp = firstFit(alignedsize))){
+	// 	placeFit(bp,alignedsize,padding);
+	// 	return bp+8;
+	// }
 	
-	
-  return NULL;
+	return NULL;
 }
 
 void* firstFit(size_t alignedsize){
 
 	sf_free_header* free;
 
-	for(free = freelist_head; free->header.alloc == 0; free=free->next){
 
-		if(alignedsize < (size_t)free->header.block_size)
+	for(free = freelist_head; free!=NULL; free=free->next){
+
+		if(free == NULL){
+			return NULL;
+		}
+
+		if(alignedsize <= (size_t)free->header.block_size<<4)
 		return free;
 	}
 	//fit not found ask for new page.
@@ -79,19 +107,24 @@ void placeFit( void *bp , size_t alignedsize, size_t padding){
 
 	//split the blocks
 
-	if((freesize-alignedsize) > 32){
+	if((freesize-alignedsize) >= 32){
 		setheader(bp,alignedsize,padding);
 		setfooter(bp,alignedsize);
-		// printf("%p\n",next_block(bp));
-		// printf("%p\n",prev_block(bp));
-		// printf("%zu***getalloc\n",getAlloc(bp));
-		// printf("%zu***getsize\n",getSize(bp));
 		removeBlock(bp);
 		bp = bp + alignedsize;
 		setfreeheader(bp,(freesize-alignedsize));
 		setfreefooter(bp,(freesize-alignedsize));
-		printf("%p****\n",bp);
 		coalesce(bp);
+		
+	}
+	
+	else if((freesize-alignedsize)==0){
+		if(oldfree == freelist_head && freelist_head->next == NULL){
+			printf("%s\n","I am here" );
+			setheader(bp,alignedsize,padding);
+			setfooter(bp,alignedsize);
+			freelist_head =NULL;
+		}
 		
 	}
 
@@ -162,6 +195,8 @@ void insertatfront(void *bp){
 	
 	if(freelist_head == NULL){
 		freelist_head = insert;
+		freelist_head->prev = NULL;
+		freelist_head->next = NULL;
 	}
 	
 	else{
@@ -180,7 +215,7 @@ void coalesce(void *bp){
 
 	size_t prev_alloc = getAlloc(prev_block(bp)) || bp ==startheap;
 	
-	size_t next_alloc = getAlloc(next_block(bp)) || bp==endheap;
+	size_t next_alloc = getAlloc(next_block(bp)) || ((bp + getSize(bp) - SF_FOOTER_SIZE )== (endheap-8));
 
 
 	size_t size = freed->header.block_size<<4;

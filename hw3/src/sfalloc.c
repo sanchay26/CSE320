@@ -90,7 +90,9 @@ int main(int argc, char *argv[]) {
     info("Initialized heap with %dmb of heap space.\n", MAX_HEAP_SIZE >> 20);
     press_to_cont();
 
-
+    // int *value26 = sf_malloc(4096-16);
+    // sf_varprint(value26);
+    // printblocks();
 
     // Print out title for first test
     printf("=== Test1: Allocation test ===\n");
@@ -109,6 +111,7 @@ int main(int argc, char *argv[]) {
     sf_varprint(value5);
     sf_varprint(value6);
     sf_varprint(value7);
+    *value7 = VALUE1_VALUE;
     //sf_free(value1);
     //sf_free(value3);
     //sf_free(value5);
@@ -131,17 +134,17 @@ int main(int argc, char *argv[]) {
     check_prim_contents(value1, VALUE1_VALUE, "%d", "value1");
     press_to_cont();
 
-    // printf("=== Test3: Allocate a second variable ===\n");
-    // info("Attempting to assign value2 = %ld\n", VALUE2_VALUE);
-    // long *value2 = sf_malloc(sizeof(long));
-    // null_check(value2, sizeof(long));
-    // payload_check(value2);
-    // sf_varprint(value2);
-    // // Assign a value
-    // *value2 = VALUE2_VALUE;
-    // // Check value
-    // check_prim_contents(value2, VALUE2_VALUE, "%ld", "value2");
-    // press_to_cont();
+    printf("=== Test3: Allocate a second variable ===\n");
+    info("Attempting to assign value2 = %ld\n", VALUE2_VALUE);
+    long *value2 = sf_malloc(sizeof(long));
+    null_check(value2, sizeof(long));
+    payload_check(value2);
+    sf_varprint(value2);
+    // Assign a value
+    *value2 = VALUE2_VALUE;
+    // Check value
+    check_prim_contents(value2, VALUE2_VALUE, "%ld", "value2");
+    press_to_cont();
 
     printf("=== Test4: does value1 still equal %d ===\n", VALUE1_VALUE);
     check_prim_contents(value1, VALUE1_VALUE, "%d", "value1");
