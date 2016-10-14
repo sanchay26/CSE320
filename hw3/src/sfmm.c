@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "helper.h"
+#include <string.h>
 #include "sfmm.h"
 
 /**
@@ -128,7 +129,10 @@ void placeFit( void *bp , size_t alignedsize, size_t padding){
 		
 	}
 
-	else{
+	else if((freesize-alignedsize)<32){
+		size_t newsize = alignedsize +(freesize-alignedsize);
+		setheader(bp,newsize,padding);
+		setfooter(bp,newsize);
 		//Splinters And no space to store anything 
 	}
 }
@@ -180,11 +184,6 @@ void sf_free(void *ptr){
 	setfreefooter(cloneptr, freesize);
 
 	coalesce(cloneptr);
-
-	// sf_free_header *ptr1= (sf_free_header*)ptr;
-	// freelist_head->prev = ptr1;
-	// ptr1->next = freelist_head;
-	// freelist_head =ptr1;
 
 }
 
@@ -302,7 +301,88 @@ void removeBlock(void *bp){
 }
 
 void *sf_realloc(void *ptr, size_t size){
-  return NULL;
+
+	size_t oldsize;
+
+	size_t newsize;
+
+	void *newptr;
+
+	//-----------if ptr == NULL return null  and check if ptr is alloced--------------------
+
+	oldsize = getSize(ptr-8);
+
+	newsize = alignsize(size)+16;
+
+	size_t padding = newsize - size - 16;
+
+	if(size <= 0){
+		//---------------------------------------------------Set Error-----------------------------
+		return NULL;
+	}
+
+	if(newsize == oldsize){
+		return ptr;
+	}
+
+	if(newsize < oldsize){
+
+		if(oldsize - newsize < 32){
+			return ptr;
+		}
+		setheader(ptr-8,newsize,padding);
+		setfooter(ptr-8,newsize);
+		void *location = (ptr-8)+newsize;
+		setfreeheader(location,(oldsize-newsize));
+		setfreefooter(location,(oldsize-newsize));
+		coalesce(location);
+		return ptr;
+	}
+
+	//sf_header *oldptr = (sf_header*)(ptr-8);
+
+	size_t nextalloc = getAlloc(next_block(ptr-8));
+	size_t nextsize = getSize(next_block(ptr-8));
+	
+	if(nextalloc == 0 && nextsize+oldsize>= newsize){
+		
+		if(((nextsize+oldsize)-newsize) <32){
+		setheader(ptr-8,nextsize+oldsize,padding);
+		setfooter(ptr-8,nextsize+oldsize);
+		return ptr;
+		}
+		
+		else{
+			printf("%s\n","YES I AM HERE" );
+			setheader(ptr-8,newsize,padding);
+			setfooter(ptr-8,newsize);
+			void *location = (ptr-8)+newsize;
+			removeBlock(location);
+			setfreeheader(location,(oldsize+nextsize-newsize));
+			setfreefooter(location,(oldsize+nextsize-newsize));
+			sf_blockprint(location);
+			coalesce(location);
+			return ptr;
+		}
+	}
+	
+	else if(nextalloc == 0 && nextsize+oldsize < newsize){
+		newptr = sf_malloc(size);
+		memcpy(newptr,ptr,oldsize);
+		sf_free(ptr);
+		return newptr;
+
+	}
+	
+	else if(nextalloc == 1){
+		newptr = sf_malloc(size);
+		// if newptr == null -----------------------set error 
+		memcpy(newptr,ptr,oldsize);
+		sf_free(ptr);
+		return newptr;
+	}
+	
+return NULL;
 }
 
 int sf_info(info* meminfo){

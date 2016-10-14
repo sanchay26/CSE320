@@ -54,7 +54,7 @@ Test(sf_memsuite, Coalesce_no_coalescing, .init = sf_mem_init, .fini = sf_mem_fi
     // All of the below should be true if there was no coalescing
     cr_assert(headofx->header.alloc == 0);
     cr_assert(headofx->header.block_size << 4 == 32);
-    cr_assert(headofx->header.padding_size == 12);
+    cr_assert(headofx->header.padding_size == 0);
 
     cr_assert(footofx->alloc == 0);
     cr_assert(footofx->block_size << 4 == 32);
@@ -66,3 +66,119 @@ Test(sf_memsuite, Coalesce_no_coalescing, .init = sf_mem_init, .fini = sf_mem_fi
 // DO NOT DELETE THESE COMMENTS
 //############################################
 */
+Test(sf_memsuite, Two_Page_Allocation, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(4097);
+    memset(x,1,4097);
+    sf_free(x);
+    cr_assert(freelist_head->header.block_size << 4 == (4096*2));
+}
+
+Test(sf_memsuite, Three_Page_Allocation, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(8193);
+    memset(x,1,8193);
+    sf_free(x);
+    cr_assert(freelist_head->header.block_size << 4 == (4096*3));
+}
+
+Test(sf_memsuite, Four_Page_Allocation, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(4096*3+1);
+    memset(x,1,4096*3+1);
+    sf_free(x);
+    cr_assert(freelist_head->header.block_size << 4 == (4096*4));
+}
+
+Test(sf_memsuite, Full_Page_Allocation_and_free, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void *x = sf_malloc(4080);
+    memset(x, 2, 4000);
+    cr_assert(freelist_head == NULL);
+    sf_free(x);
+    cr_assert(freelist_head->header.block_size << 4 == 4096);
+}
+
+Test(sf_memsuite, Splinter_Allocation_and_free, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void *x = sf_malloc(32); // Block will be 32 + 16
+    void* y = sf_malloc(4016); // Free block is 4048 before malloc
+    memset(x, 1, 32);
+    memset(y, 2, 4000);
+    cr_assert(((sf_header*)(y-8))->block_size << 4 == 4048);
+}
+
+Test(sf_memsuite, Coalesce_prev_block, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void *w = sf_malloc(32);
+    void *x = sf_malloc(64);    
+    void *y = sf_malloc(96);
+    void *z = sf_malloc(128);
+    memset(w, 1, 32);
+    memset(x, 2, 64);
+    memset(y, 3, 96);
+    memset(z, 4, 128);
+    cr_assert(freelist_head==(z-8+144));
+    sf_free(x);
+    sf_free(y);
+    cr_assert(freelist_head==(x-8));
+    cr_assert(freelist_head->header.padding_size == 0);
+    cr_assert(freelist_head->header.block_size << 4 == 192);
+    cr_assert(freelist_head->next == (z-8+144));
+    cr_assert(freelist_head->prev == NULL);
+}
+
+Test(sf_memsuite, Coalesce_next_block, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void *w = sf_malloc(32);
+    void *x = sf_malloc(64);    
+    void *y = sf_malloc(96);
+    void *z = sf_malloc(128);
+    memset(w, 1, 32);
+    memset(x, 2, 64);
+    memset(y, 3, 96);
+    memset(z, 4, 128);
+    cr_assert(freelist_head==(z-8+144));
+    sf_free(y);
+    sf_free(x);
+    cr_assert(freelist_head==(x-8));
+    cr_assert(freelist_head->header.padding_size == 0);
+    cr_assert(freelist_head->header.block_size << 4 == 192);
+    cr_assert(freelist_head->next == (z-8+144));
+    cr_assert(freelist_head->prev == NULL);
+}
+
+Test(sf_memsuite, Coalesce_both_block_1, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void *w = sf_malloc(32);
+    void *x = sf_malloc(64);    
+    void *y = sf_malloc(96);
+    void *z = sf_malloc(128);
+    memset(w, 1, 32);
+    memset(x, 2, 64);
+    memset(y, 3, 96);
+    memset(z, 4, 128);
+    cr_assert(freelist_head==(z-8+144));
+    sf_free(w); //48
+    sf_free(y); //112
+    sf_free(x); //48+112+80 = 240
+    cr_assert(freelist_head==(w-8));
+    cr_assert(freelist_head->header.padding_size == 0);
+    cr_assert(freelist_head->header.block_size << 4 == 240);
+    cr_assert(freelist_head->next == (z-8+144));
+    cr_assert(freelist_head->prev == NULL);
+}
+
+Test(sf_memsuite, Coalesce_both_block_2, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void *w = sf_malloc(32);
+    void *x = sf_malloc(64);    
+    void *y = sf_malloc(96);
+    void *z = sf_malloc(128);
+    void *hi = sf_malloc(256);
+    void *bye = sf_malloc(512);
+    memset(w, 1, 32);
+    memset(x, 2, 64);
+    memset(y, 3, 96);
+    memset(z, 4, 128);
+    memset(hi, 5, 256);
+    memset(bye, 6, 512);
+    sf_free(y); //112
+    sf_free(x); //112+80 = 192
+    cr_assert(freelist_head==(x-8));
+    cr_assert(freelist_head->header.padding_size == 0);
+    cr_assert(freelist_head->header.block_size << 4 == 192);
+    cr_assert(freelist_head->next == (bye-8+528));
+    cr_assert(freelist_head->prev == NULL);
+}

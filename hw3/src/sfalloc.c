@@ -86,13 +86,25 @@ int main(int argc, char *argv[]) {
     // Initialize the custom allocator
     sf_mem_init(MAX_HEAP_SIZE);
 
+    int *value26 = sf_malloc(16);
+    int *value28 = sf_malloc(16);
+    int *value30 = sf_malloc(16);
+    //sf_free(value28);
+    *value26 = 26;
+    printblocks();
+    int *value32 = sf_realloc(value26,64);
+    check_prim_contents(value32, 26, "%d", "value32");
+    printblocks();
+    sf_varprint(value28);
+    sf_varprint(value30);
+    sf_varprint(value32);
+   
+
     // Tell the user about the fields
     info("Initialized heap with %dmb of heap space.\n", MAX_HEAP_SIZE >> 20);
     press_to_cont();
 
-    // int *value26 = sf_malloc(4096-16);
-    // sf_varprint(value26);
-    // printblocks();
+     
 
     // Print out title for first test
     printf("=== Test1: Allocation test ===\n");
