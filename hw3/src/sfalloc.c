@@ -86,9 +86,16 @@ int main(int argc, char *argv[]) {
     // Initialize the custom allocator
     sf_mem_init(MAX_HEAP_SIZE);
 
-    // int *value26 = sf_malloc(4080);
-     //int *value28 = sf_malloc(16);
-     //sf_free(value26);
+     // int *value26 = sf_malloc(16);
+     // int *value28 = sf_malloc(16);
+     // int *value30 = sf_malloc(16);
+     // *value26 = 26;
+     // sf_free(value28);
+     // int *value32 = sf_realloc(value26,64);
+     // check_prim_contents(value32, 26, "%d", "value26");
+     // sf_varprint(value32);
+     
+     // printblocks();
      //info inf;
      //sf_info(&inf);
      //printf("***inf malloc%zu\n",inf.allocations);
@@ -101,8 +108,8 @@ int main(int argc, char *argv[]) {
     // int *value32 = sf_realloc(value26,64);
     // check_prim_contents(value32, 26, "%d", "value32");
     // printblocks();
-    //sf_varprint(value26);
-    // sf_varprint(value30);
+    //sf_varprint(value28);
+    //sf_varprint(value30);
     // sf_varprint(value32);
    
 
