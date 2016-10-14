@@ -13,6 +13,12 @@
 
 sf_free_header* freelist_head = NULL;
 
+size_t totalfrees= 0;
+size_t totalcoalesce = 0;
+size_t totalmalloc = 0;
+size_t external = 0;
+size_t internal = 0;
+
 void *startheap;
 void *endheap;
 int begin = 0;
@@ -28,9 +34,13 @@ void *sf_malloc(size_t size){
 
 	void *bp = NULL;
 	
-	if(size <= 0 || size > ((4096*4)-16)){
-		
-		//Set Error Number
+	if(size <= 0){
+		errno = EINVAL;
+		return NULL;
+	}
+	
+	else if(size > ((4096*4)-16)){
+		errno = ENOMEM;
 		return NULL;
 	}
 		
@@ -58,7 +68,8 @@ void *sf_malloc(size_t size){
 
 			endheap = sf_sbrk(1);
 			if(endheap == NULL){
-				//--------------------------------------Set Error Number---------------------------------
+				errno = ENOMEM;
+				return NULL;
 			}
 
 			void *location = endheap - 4096;
@@ -70,14 +81,12 @@ void *sf_malloc(size_t size){
 
 		else{
 			placeFit(bp,alignedsize,padding);
-			return bp+8;}
+			totalmalloc = totalmalloc+1;
+			return bp+8;
 		}
 	
-	// if((bp = firstFit(alignedsize))){
-	// 	placeFit(bp,alignedsize,padding);
-	// 	return bp+8;
-	// }
-	
+	}
+	errno = ENOMEM;
 	return NULL;
 }
 
@@ -95,8 +104,7 @@ void* firstFit(size_t alignedsize){
 		if(alignedsize <= (size_t)free->header.block_size<<4)
 		return free;
 	}
-	//fit not found ask for new page.
-	// Set the error flag.
+	
 	return NULL; //No fit found 
 }
 
@@ -121,7 +129,6 @@ void placeFit( void *bp , size_t alignedsize, size_t padding){
 	
 	else if((freesize-alignedsize)==0){
 		if(oldfree == freelist_head && freelist_head->next == NULL){
-			printf("%s\n","I am here" );
 			setheader(bp,alignedsize,padding);
 			setfooter(bp,alignedsize);
 			freelist_head =NULL;
@@ -149,7 +156,6 @@ void setfreeheader(void *bp, size_t alignedsize){
 	fit->header.alloc = 0;
 	fit->header.block_size = alignedsize>>4;
 	fit->header.padding_size = 0;
-	//freelist_head = fit;
 }
 
 void setfooter(void *bp, size_t alignedsize){
@@ -177,6 +183,16 @@ void sf_free(void *ptr){
 
 	sf_header *free = (sf_header*)cloneptr;
 
+	if(cloneptr < startheap || cloneptr > endheap){
+		errno = EINVAL;
+		return;
+	}
+
+	if(free->alloc == 0){
+		errno = EINVAL;
+		return;
+	}
+
 	size_t freesize = free->block_size<<4;
 
 	setfreeheader(cloneptr, freesize);
@@ -184,6 +200,8 @@ void sf_free(void *ptr){
 	setfreefooter(cloneptr, freesize);
 
 	coalesce(cloneptr);
+
+	totalfrees = totalfrees +1;
 
 }
 
@@ -221,42 +239,40 @@ void coalesce(void *bp){
 	
 	/*case1*/
 	if(prev_alloc && !next_alloc){
-		printf("%s\n","In case 1");
 		size = size + getSize(next_block(bp));
 		removeBlock(next_block(bp));
 		setfreeheader(bp,size); 
 		setfreefooter(bp,size);
+		totalcoalesce = totalcoalesce +1;
 	}
 	/*case2*/
 	else if(!prev_alloc && next_alloc){
-		printf("%s\n","In case 2");
 		size = size + getSize(prev_block(bp));
 		bp = prev_block(bp);
 		removeBlock(bp);
 		setfreeheader(bp,size); 
 		setfreefooter(bp,size);
+		totalcoalesce = totalcoalesce +1;
 	}
 	/*case3*/
 
 	if(!prev_alloc && !next_alloc){
-		printf("%s\n","In case 3");
 		size = size + getSize(prev_block(bp))+ getSize(next_block(bp));
 		removeBlock(prev_block(bp));
 		removeBlock(next_block(bp));
 		bp = prev_block(bp);
 		setfreeheader(bp,size);
 		setfreefooter(bp,size);
+		totalcoalesce = totalcoalesce +1;
 	}
 
 	insertatfront(bp);
-	//printblocks();
 }
 
 void* next_block(void *bp){
 	int *next = (int*)bp;
 	size_t size = *next & 0xfffffff0;
 	void *nextblock = bp+size;
-	printf("%p\n",next_block);
 	return nextblock;
 }
 
@@ -264,7 +280,6 @@ void* prev_block(void *bp){
 	int *prev = (int*)(bp-8);
 	size_t size = *prev & 0xfffffff0;
 	void *prevblock = bp-size;
-	printf("%p\n",prev_block);
 	return prevblock;
 }
 
@@ -282,7 +297,6 @@ size_t getSize(void *bp){
 
 void removeBlock(void *bp){
 
-	printf("%s\n","in remove block" );
 	sf_free_header *remove = (sf_free_header*)bp;
 
 	sf_free_header *previousfree = remove->prev;
@@ -308,16 +322,25 @@ void *sf_realloc(void *ptr, size_t size){
 
 	void *newptr;
 
-	//-----------if ptr == NULL return null  and check if ptr is alloced--------------------
-
+	
 	oldsize = getSize(ptr-8);
 
 	newsize = alignsize(size)+16;
 
 	size_t padding = newsize - size - 16;
 
-	if(size <= 0){
-		//---------------------------------------------------Set Error-----------------------------
+	if(size <= 0 || ptr == NULL){
+		errno = EINVAL;
+		return NULL;
+	}
+
+	if( ((ptr-8) < startheap) || ((ptr-8) > endheap)){
+		errno = EINVAL;
+		return NULL;
+	}
+
+	if(getAlloc(ptr-8) == 0){
+		errno = EINVAL;
 		return NULL;
 	}
 
@@ -339,8 +362,6 @@ void *sf_realloc(void *ptr, size_t size){
 		return ptr;
 	}
 
-	//sf_header *oldptr = (sf_header*)(ptr-8);
-
 	size_t nextalloc = getAlloc(next_block(ptr-8));
 	size_t nextsize = getSize(next_block(ptr-8));
 	
@@ -353,14 +374,12 @@ void *sf_realloc(void *ptr, size_t size){
 		}
 		
 		else{
-			printf("%s\n","YES I AM HERE" );
 			setheader(ptr-8,newsize,padding);
 			setfooter(ptr-8,newsize);
 			void *location = (ptr-8)+newsize;
 			removeBlock(location);
 			setfreeheader(location,(oldsize+nextsize-newsize));
 			setfreefooter(location,(oldsize+nextsize-newsize));
-			sf_blockprint(location);
 			coalesce(location);
 			return ptr;
 		}
@@ -368,7 +387,11 @@ void *sf_realloc(void *ptr, size_t size){
 	
 	else if(nextalloc == 0 && nextsize+oldsize < newsize){
 		newptr = sf_malloc(size);
-		memcpy(newptr,ptr,oldsize);
+		if(newptr == NULL){
+			errno = ENOMEM;
+			return NULL;
+		}
+		memcpy(newptr,ptr,oldsize-16);
 		sf_free(ptr);
 		return newptr;
 
@@ -376,8 +399,13 @@ void *sf_realloc(void *ptr, size_t size){
 	
 	else if(nextalloc == 1){
 		newptr = sf_malloc(size);
-		// if newptr == null -----------------------set error 
-		memcpy(newptr,ptr,oldsize);
+
+		if(newptr == NULL){
+			errno = ENOMEM;
+			return NULL;
+		}
+		
+		memcpy(newptr,ptr,oldsize-16);
 		sf_free(ptr);
 		return newptr;
 	}
@@ -386,7 +414,18 @@ return NULL;
 }
 
 int sf_info(info* meminfo){
-  return -1;
+
+	if(meminfo != NULL){
+
+		meminfo->allocations = totalmalloc;
+		meminfo->frees = totalfrees;
+		meminfo->coalesce = totalcoalesce;
+		meminfo->external = calculateExternal();
+		meminfo->internal = calculateInternal();
+		return 0;
+	}
+
+	return -1;
 }
 
 size_t alignsize(size_t size){
@@ -413,4 +452,45 @@ void printblocks(){
 
 	}
 	printf("%s\n","-----------------------------------------------------------------------------------------------------" );
+}
+
+size_t calculateExternal(){
+
+	external = 0;
+	sf_free_header *externalfree = freelist_head;
+
+	if(externalfree == NULL){
+		return 0;
+	}
+	for (externalfree = freelist_head; externalfree!=NULL; externalfree = externalfree->next){
+		external = external + (externalfree->header.block_size<<4);	
+	}
+
+	return external;
+
+}
+
+size_t calculateInternal(){
+
+	internal = 0;
+
+	void *count = startheap;
+
+	if(count == NULL){
+		return 0;
+	}
+	
+	while(count < endheap){
+
+		sf_header *help = (sf_header*)count;
+
+		if(help->alloc == 1){
+
+			internal = internal + 16 + (help->padding_size);
+
+		}
+
+		count = count + (help->block_size<<4);
+	}
+	return internal;
 }

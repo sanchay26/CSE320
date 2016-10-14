@@ -24,8 +24,13 @@ void* next_block(void *bp);
 void* prev_block(void *bp);
 
 size_t getSize(void *bp);
+
 size_t getAlloc(void *bp);
 
 void insertatfront(void *bp);
 
 void printblocks();
+
+size_t calculateInternal();
+
+size_t calculateExternal();

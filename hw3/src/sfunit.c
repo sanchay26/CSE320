@@ -66,6 +66,28 @@ Test(sf_memsuite, Coalesce_no_coalescing, .init = sf_mem_init, .fini = sf_mem_fi
 // DO NOT DELETE THESE COMMENTS
 //############################################
 */
+
+Test(sf_memsuite, Zero_Size_Allocation, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(0);
+    cr_assert(x == NULL);
+}
+
+Test(sf_memsuite, One_Full_Page_Allocation, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(4080);
+    memset(x,1,4080);
+    info inf;
+    sf_info(&inf);
+    cr_assert(inf.internal == 16);
+    cr_assert(inf.external == 0);
+    cr_assert(inf.allocations== 1);
+}
+
+Test(sf_memsuite, Two_Full_Page_Allocation, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(8176);
+    memset(x,1,8176);
+    cr_assert(freelist_head == NULL);
+}
+
 Test(sf_memsuite, Two_Page_Allocation, .init = sf_mem_init, .fini = sf_mem_fini) {
     void* x = sf_malloc(4097);
     memset(x,1,4097);
