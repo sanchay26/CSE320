@@ -172,5 +172,5 @@ Test(sf_memsuite, Freeing_A_Free_Block, .init = sf_mem_init, .fini = sf_mem_fini
     void* x = sf_malloc(0);
     sf_free(x);
     sf_free(x); // Trying to free a free block
-    cr_assert(errno == EINVAL); //error is set to EINVAL
+   cr_assert(errno == EINVAL);//error is set to EINVAL
 }
