@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include "sfmm.h"
 
 /**
@@ -73,7 +74,7 @@ Test(sf_memsuite, Zero_Size_Allocation, .init = sf_mem_init, .fini = sf_mem_fini
     cr_assert(x == NULL);
 }
 //2
-Test(sf_memsuite, One_Full_Page_Allocation, .init = sf_mem_init, .fini = sf_mem_fini) {
+Test(sf_memsuite, Struct_Info_for_one_page, .init = sf_mem_init, .fini = sf_mem_fini) {
     void* x = sf_malloc(4080);
     memset(x,1,4080);
     info inf;
@@ -127,7 +128,7 @@ Test(sf_memsuite, Realloc_With_Splinter_coalesced, .init = sf_mem_init, .fini = 
     memset(x,1,32);
     void* y = sf_malloc(16);
     memset(y,1,16);
-    void* z = sf_realloc(x,16); 
+    void* z = sf_realloc(x,16); //Return same address
     cr_assert(x==z);
 }
 //9
@@ -136,8 +137,9 @@ Test(sf_memsuite, Realloc_giving_null, .init = sf_mem_init, .fini = sf_mem_fini)
     memset(x,1,32);
     void* y = sf_malloc(16);
     memset(y,1,16);
-    void* z = sf_realloc(x,4096*4); 
+    void* z = sf_realloc(x,4096*4); //realloc giving null for more memory that 4096*4 bytes
     cr_assert(z==NULL);
+    cr_assert(errno = ENOMEM);
 }
 //10
 Test(sf_memsuite, Coalesce_Next_And_Previous, .init = sf_mem_init, .fini = sf_mem_fini) {
@@ -150,4 +152,25 @@ Test(sf_memsuite, Coalesce_Next_And_Previous, .init = sf_mem_init, .fini = sf_me
     void *z = sf_malloc(4080); //Malloc whole page
     memset(z,1,4080);
     cr_assert(freelist_head == NULL);//freelist head should be null
+}
+//11
+Test(sf_memsuite, Check_ErroNo_for_oversize, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(26000);
+    //memset(x,1,16);
+    cr_assert(x==NULL);
+    cr_assert(errno == ENOMEM);//Error is Set to ENOMEM
+}
+//12
+Test(sf_memsuite, Check_ErrorNO_For_Invalid_Value, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(0);
+    cr_assert(x==NULL);
+    cr_assert(errno == EINVAL);//error is set to EINVAL
+}
+//13
+
+Test(sf_memsuite, Freeing_A_Free_Block, .init = sf_mem_init, .fini = sf_mem_fini) {
+    void* x = sf_malloc(0);
+    sf_free(x);
+    sf_free(x); // Trying to free a free block
+    cr_assert(errno == EINVAL); //error is set to EINVAL
 }
