@@ -19,15 +19,7 @@ LIBS := readline
 debug: CFLAGS += -g -DDEBUG
 debug: all
 
-all: setup $(EXEC)
-
-setup:
-	mkdir -p bin build
-	stty intr undef
-	stty quit undef
-	stty kill undef
-	stty eof undef
-	stty susp undef
+all: $(EXEC)
 
 $(EXEC): $(_OBJF)
 	$(CC) $^ -o $(BIND)/$@ -l $(LIBS)
@@ -35,16 +27,5 @@ $(EXEC): $(_OBJF)
 $(BLDD)/%.o: $(SRCD)/%.c
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
-
-reset:
-	stty intr ^c
-	stty quit ^\\
-	stty kill ^u
-	stty eof ^d
-	stty susp ^z
-
-stat:
-	stty -a
-
-clean: reset
+clean:
 	$(RM) -r $(BLDD) $(BIND)
