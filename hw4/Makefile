@@ -19,7 +19,10 @@ LIBS := readline
 debug: CFLAGS += -g -DDEBUG
 debug: all
 
-all: $(EXEC)
+all: setup $(EXEC)
+
+setup:
+	mkdir -p bin build
 
 $(EXEC): $(_OBJF)
 	$(CC) $^ -o $(BIND)/$@ -l $(LIBS)
