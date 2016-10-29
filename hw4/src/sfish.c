@@ -12,11 +12,13 @@ char prevDir[1024];
 int firstcd = 0;
 char hostname[1024];
 char username[1024];
-char prompt[4098] = "sfish";
+char prompt[4098];
 char *dash = "-";
 char *colon = ":";
 char *attherate = "@";
 char *sfish = "sfish";
+char *usertoggle ="1";
+char *hosttoggle="1";
 
 
 
@@ -29,11 +31,11 @@ int main(int argc, char** argv) {
     gethostname(hostname, 1023);
    // username = getenv("USER");
     strcpy(username,getenv("USER"));
-    getPrompt(0,0);
+    getPrompt("1","1");
     char *cmd;
     
 
-    while((cmd = readline("sfish> ")) != NULL) {
+    while((cmd = readline(prompt)) != NULL) {
         
         if (strcmp(cmd,"quit")==0){
             break;
@@ -55,6 +57,11 @@ int main(int argc, char** argv) {
         if(strcmp(param[0],"cd")==0 && numofParam<=2){
 
             cd();
+        }
+
+        if(strcmp(param[0],"chpmt")==0 && numofParam == 3){
+            printf("%s\n","HERE" );
+            chpmt();
         }
        
         
@@ -191,33 +198,69 @@ void prt(){
 }
 
 
-void getPrompt(int user, int host){
+void getPrompt(char *user, char *host){
 
-    
-    printf("Hostname: %s\n", hostname);
-    
-    printf("USER%s\n",username);
+    strcpy(prompt,"");
+    strcat(prompt,sfish); 
+    char filename[1024];
+    size_t homelen = strlen(getenv("HOME"));
 
 
-
-    if( user==1 || host==1){
+    if( strcmp(user,"1")==0 || strcmp(host,"1")==0){
         strcat(prompt,dash);
     }
 
-    if(user == 1){
+    if(strcmp(user,"1")==0){
         strcat(prompt,username);
 
-        if(host == 1){
+        if(strcmp(host,"1")==0){
             strcat(prompt,attherate);
         }
     }
-    if(host == 1){
+
+    if(strcmp(host,"1")==0){
 
         strcat(prompt,hostname);
     }
-    strcat(prompt,colon);
-    
 
-    printf("%s\n",prompt);
+    strcat(prompt,colon);
+    strcat(prompt,"[");
+    
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+
+    size_t totalsize = strlen(cwd);
+
+    strncpy(filename,cwd+homelen,totalsize-homelen);
+    printf("filename%s\n",filename );
+    strcat(prompt,filename);
+    strcat(prompt,"]");
+    strcat(prompt,">");
+    //printf("%s\n",prompt);
+
+}
+
+void chpmt(){
+
+
+    if(strcmp(param[1],"user") ==0 && strcmp(param[2],"0")==0){
+        printf("%s\n","Im here" );
+        usertoggle = "0";
+        getPrompt("0",hosttoggle);
+    }
+    if(strcmp(param[1],"user") ==0 && strcmp(param[2],"0")==1){
+        usertoggle = "1";
+        getPrompt("1",hosttoggle);
+    }
+    if(strcmp(param[1],"machine") ==0 && strcmp(param[2],"0")==0){
+        hosttoggle = "0";
+        getPrompt(usertoggle,"0");
+    }
+    if(strcmp(param[1],"machine") ==0 && strcmp(param[2],"0")==1){
+        hosttoggle = "1";
+        getPrompt(usertoggle,"1");
+    }
+    //**********************check if other than 0 or 1 
+    printf("%s\n","ERROR IN CHPMT" );
 
 }

@@ -6,3 +6,4 @@ void tokenise(char *cmddup, char **param);
 void cd();
 void prt();
 void getPrompt();
+void chpmt();
