@@ -109,30 +109,27 @@ int main(int argc, char** argv) {
                   
                     if(fork()==0){
                         execvp(temp,param);  
-                         
+                        break;
                         exit(0);
                     }
 
                     wait(NULL);
                 }
-                else {
-                    
-                    char exec[1024];
-                    getcwd(exec, sizeof(exec));
-                    strcat(exec,"/");
-                    strcat(exec,param[0]);
-                    if (file_exist (exec))
-                    {
-                      
-                        if(fork()==0){
-                            execvp(exec,param);  
-                            exit(0);
-                        }
-
-                        wait(NULL);
-                    }
-
+                
+            }
+            char exec[1024]="";
+            getcwd(exec, sizeof(exec));
+            strcat(exec,"/");
+            strcat(exec,param[0]);
+            if (file_exist (exec))
+            {
+              
+                if(fork()==0){
+                    execvp(exec,param);  
+                    exit(0);
                 }
+
+                wait(NULL);
             }
             free(temp);
         }
