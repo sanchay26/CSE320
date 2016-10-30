@@ -7,3 +7,4 @@ void cd();
 void prt();
 void getPrompt();
 void chpmt();
+void chclr();

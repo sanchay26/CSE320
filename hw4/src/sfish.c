@@ -19,6 +19,13 @@ char *attherate = "@";
 char *sfish = "sfish";
 char *usertoggle ="1";
 char *hosttoggle="1";
+int usercolor = 2 ;
+int hostcolor = 0 ;
+
+char *promptcolor[] ={"red","green","blue","yellow","black","white","magenta","cyan"};
+
+char *colorcodes[] ={"\x1b[31m","\x1b[32m","\x1b[34m","\x1b[33m","\x1b[30m","\x1b[37m","\x1b[35m","\x1b[36m"};
+
 
 
 
@@ -36,6 +43,8 @@ int main(int argc, char** argv) {
     
 
     while((cmd = readline(prompt)) != NULL) {
+
+        
         
         if (strcmp(cmd,"quit")==0){
             break;
@@ -60,8 +69,14 @@ int main(int argc, char** argv) {
         }
 
         if(strcmp(param[0],"chpmt")==0 && numofParam == 3){
-            printf("%s\n","HERE" );
+
             chpmt();
+        }
+
+        if(strcmp(param[0],"chclr")==0 && numofParam == 3){
+           
+            chclr();
+            getPrompt(usertoggle,hosttoggle);
         }
        
         
@@ -208,19 +223,23 @@ void getPrompt(char *user, char *host){
 
     if( strcmp(user,"1")==0 || strcmp(host,"1")==0){
         strcat(prompt,dash);
+        strcat(prompt,colorcodes[usercolor]);
     }
 
     if(strcmp(user,"1")==0){
         strcat(prompt,username);
-
+        strcat(prompt,colorcodes[5]);
+        
         if(strcmp(host,"1")==0){
+            
             strcat(prompt,attherate);
         }
     }
 
     if(strcmp(host,"1")==0){
-
+        strcat(prompt,colorcodes[hostcolor]);
         strcat(prompt,hostname);
+        strcat(prompt,colorcodes[5]);
     }
 
     strcat(prompt,colon);
@@ -232,19 +251,15 @@ void getPrompt(char *user, char *host){
     size_t totalsize = strlen(cwd);
 
     strncpy(filename,cwd+homelen,totalsize-homelen);
-    printf("filename%s\n",filename );
     strcat(prompt,filename);
     strcat(prompt,"]");
     strcat(prompt,">");
-    //printf("%s\n",prompt);
-
 }
 
 void chpmt(){
 
 
     if(strcmp(param[1],"user") ==0 && strcmp(param[2],"0")==0){
-        printf("%s\n","Im here" );
         usertoggle = "0";
         getPrompt("0",hosttoggle);
     }
@@ -261,6 +276,30 @@ void chpmt(){
         getPrompt(usertoggle,"1");
     }
     //**********************check if other than 0 or 1 
-    printf("%s\n","ERROR IN CHPMT" );
+    //printf("%s\n","ERROR IN CHPMT" );
+
+}
+
+void chclr(){
+
+
+    if(strcmp(param[1],"user") ==0){
+
+        for(int i=0;i<8;i++){
+            
+            if(strcmp(param[2],promptcolor[i])==0){
+                usercolor = i;
+            }
+        }
+    }
+    if(strcmp(param[1],"machine") ==0){
+
+        for(int i=0;i<8;i++){
+            
+            if(strcmp(param[2],promptcolor[i])==0){
+                hostcolor = i;
+            }
+        }
+    }
 
 }
