@@ -1,13 +1,16 @@
 #include "sfish.h"
 #include <unistd.h> 
 #include <sys/wait.h>
+#include <sys/stat.h>
 
 
 #define MAX_PARAMS 15
 
 int numofParam=0;
+int numofPath = 0;
 int exitFlag =0;
 char *param[MAX_PARAMS+1];
+char *patharray[4096];
 char prevDir[1024];
 int firstcd = 0;
 char hostname[1024];
@@ -21,10 +24,16 @@ char *usertoggle ="1";
 char *hosttoggle="1";
 int usercolor = 2 ;
 int hostcolor = 0 ;
+int userbold = 0;
+int hostbold = 0;
+
+char *builtin[] = {"exit","cd","chpmt","chclr","help","pwd","prt"};
 
 char *promptcolor[] ={"red","green","blue","yellow","black","white","magenta","cyan"};
 
 char *colorcodes[] ={"\x1b[31m","\x1b[32m","\x1b[34m","\x1b[33m","\x1b[30m","\x1b[37m","\x1b[35m","\x1b[36m"};
+
+char * colorBoldCodes[]  = {"\033[1m\033[31m","\033[1m\033[32m","\033[1m\033[34m","\033[1m\033[33m", "\033[1m\033[30m","\033[1m\033[37m" ,"\033[1m\033[35m","\033[1m\033[36m" };
 
 
 
@@ -37,80 +46,128 @@ int main(int argc, char** argv) {
     hostname[1023] = '\0';
     gethostname(hostname, 1023);
    // username = getenv("USER");
-    strcpy(username,getenv("USER"));
+   // strcpy(username,getenv("USER"));
     getPrompt("1","1");
     char *cmd;
+    tokenisePath();
+    //printf("%s\n",getenv );
     
-
     while((cmd = readline(prompt)) != NULL) {
 
         
-        
-        if (strcmp(cmd,"quit")==0){
-            break;
-        }
-
         char* cmddup = strdup(cmd);
         
         tokenise(cmddup,param);
+
 
         if(numofParam == 0){
             continue;
         }
 
-        if(strcmp(param[0],"exit")==0 && numofParam == 1){
-            
-            exit(3);
+        if (strcmp(cmd,"quit")==0){
+            break;
         }
 
-        if(strcmp(param[0],"cd")==0 && numofParam<=2){
+        if(checkbuiltin(param[0])==1){
 
-            cd();
-        }
-
-        if(strcmp(param[0],"chpmt")==0 && numofParam == 3){
-
-            chpmt();
-        }
-
-        if(strcmp(param[0],"chclr")==0 && numofParam == 3){
-           
-            chclr();
-            getPrompt(usertoggle,hosttoggle);
-        }
-       
-        
-        if(fork() == 0){
-
-            if (strcmp(param[0],"help")==0 && numofParam == 1){
-                printf("%s\n","*******YO BITCH GET OUT DA WAY*********");
+            if(strcmp(param[0],"exit")==0 && numofParam == 1){
+                
+                exit(3);
             }
 
-            // This is PWD
+            if(strcmp(param[0],"cd")==0 && numofParam<=2){
+                cd();
+            }
 
-            if(strcmp(param[0],"pwd")==0 && numofParam==1){
+            if(strcmp(param[0],"chpmt")==0 && numofParam == 3){
 
-                char cwd[1024];
+                chpmt();
+            }
 
-                if (getcwd(cwd, sizeof(cwd)) != NULL){
+            if(strcmp(param[0],"chclr")==0 && numofParam == 4){
+               
+                chclr();
 
-                fprintf(stdout, "Current working dir: %s\n", cwd);
+            }
+            
+            getPrompt(usertoggle,hosttoggle);
+
+        }
+        
+        else{
+
+            char *temp = malloc(4096);
+            strcpy(temp,"");
+            for(int i=0;i<numofPath;i++){
+
+                strcpy(temp,patharray[i]);
+                strcat(temp,"/");
+                strcat(temp,param[0]);
+
+                if (file_exist (temp))
+                {
+                  
+                    if(fork()==0){
+                        execvp(temp,param);  
+                         
+                        exit(0);
+                    }
+
+                    wait(NULL);
+                }
+                else {
+                    
+                    char exec[1024];
+                    getcwd(exec, sizeof(exec));
+                    strcat(exec,"/");
+                    strcat(exec,param[0]);
+                    if (file_exist (exec))
+                    {
+                      
+                        if(fork()==0){
+                            execvp(exec,param);  
+                            exit(0);
+                        }
+
+                        wait(NULL);
+                    }
 
                 }
             }
+            free(temp);
+        }
+        
+        // if(fork() == 0){
+
+        //     if (strcmp(param[0],"help")==0 && numofParam == 1){
+        //         printf("%s\n","*******YO BITCH GET OUT DA WAY*********");
+        //     }
+
+        //     // This is PWD
+
+        //     if(strcmp(param[0],"pwd")==0 && numofParam==1){
+
+        //         char cwd[1024];
+
+        //         if (getcwd(cwd, sizeof(cwd)) != NULL){
+
+        //         fprintf(stdout, "Current working dir: %s\n", cwd);
+
+        //         }
+        //     }
             
-            if(strcmp(param[0],"prt")==0){
-                prt();
+        //     if(strcmp(param[0],"prt")==0){
+        //         prt();
                 
-            }
+        //     }
 
-            exit(0);  
-        }
+        //     exit(0);  
+        // }
 
-        //this is the parent processs......
-        else{
-            wait(NULL);
-        }
+        // //this is the parent processs......
+        // else{
+        //     wait(NULL);
+        // }
            
 
         //printf("%s\n",cmd);
@@ -131,7 +188,23 @@ int main(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
+int checkbuiltin(char *param){
 
+    for(int i=0;i<7;i++){
+
+        if(strcmp(param,builtin[i])==0){
+            return 1;
+        }
+    }
+
+return 0;
+}
+
+int file_exist (char *filename)
+{
+  struct stat   buffer;   
+  return (stat (filename, &buffer) == 0);
+}
 void tokenise(char *cmddup, char **param){
 
     char *init;
@@ -155,6 +228,33 @@ void tokenise(char *cmddup, char **param){
     }
 
 }
+
+void tokenisePath(){
+    //patharray = malloc(1024*strlen(getenv("PATH")));
+    char *init;
+    int i = 1;
+    numofPath = 0;
+    init = strtok (getenv("PATH"),":");
+    
+    if(init == NULL){
+        return;
+    }
+    patharray[0] = init;
+    numofPath++;
+    while (init != NULL)
+    {
+        patharray[i] = strtok (NULL, ":");
+        
+        if(patharray[i] == NULL) 
+            break;
+            
+            i++;
+            numofPath++;
+    }
+
+}
+
+
 
 void cd(){
 
@@ -216,14 +316,22 @@ void prt(){
 void getPrompt(char *user, char *host){
 
     strcpy(prompt,"");
+
     strcat(prompt,sfish); 
-    char filename[1024];
+    char filename[1024] ="";
     size_t homelen = strlen(getenv("HOME"));
 
 
     if( strcmp(user,"1")==0 || strcmp(host,"1")==0){
         strcat(prompt,dash);
-        strcat(prompt,colorcodes[usercolor]);
+        if(userbold == 0){
+            strcat(prompt,colorcodes[usercolor]);
+        }
+        
+        else{
+            strcat(prompt,colorBoldCodes[usercolor]);
+        } 
+            
     }
 
     if(strcmp(user,"1")==0){
@@ -237,7 +345,16 @@ void getPrompt(char *user, char *host){
     }
 
     if(strcmp(host,"1")==0){
-        strcat(prompt,colorcodes[hostcolor]);
+        if(hostbold == 0){
+            //printf("%s\n","HERE 0" );
+          strcat(prompt,colorcodes[hostcolor]);  
+        }
+        
+        else{
+            //printf("%s\n","HERE 1" );
+         strcat(prompt,colorBoldCodes[hostcolor]);   
+        }
+        
         strcat(prompt,hostname);
         strcat(prompt,colorcodes[5]);
     }
@@ -290,6 +407,13 @@ void chclr(){
             if(strcmp(param[2],promptcolor[i])==0){
                 usercolor = i;
             }
+
+        }
+        if(strcmp(param[3],"0")==0){
+            userbold = 0 ;
+        }
+        else if(strcmp(param[3],"1")==0){
+            userbold =1;
         }
     }
     if(strcmp(param[1],"machine") ==0){
@@ -300,6 +424,11 @@ void chclr(){
                 hostcolor = i;
             }
         }
+        if(strcmp(param[3],"0")==0){
+            hostbold = 0 ;
+        }
+        else if(strcmp(param[3],"1")==0){
+            hostbold =1;
+        }
     }
-
 }

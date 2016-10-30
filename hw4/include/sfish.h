@@ -8,3 +8,7 @@ void prt();
 void getPrompt();
 void chpmt();
 void chclr();
+void tokenisePath();
+int checkbuiltin(char *param);
+
+int file_exist(char *filename);
