@@ -43,18 +43,17 @@ int main(int argc, char** argv) {
     rl_catch_signals = 0;
     //This is disable readline's default signal handlers, since you are going
     //to install your own.
-    hostname[1023] = '\0';
-    gethostname(hostname, 1023);
-   // username = getenv("USER");
-   // strcpy(username,getenv("USER"));
-    getPrompt("1","1");
+    
     char *cmd;
+    
+    getPrompt("1","1");
+    
     tokenisePath();
-    //printf("%s\n",getenv );
+
     
     while((cmd = readline(prompt)) != NULL) {
 
-        
+        int found = 0;
         char* cmddup = strdup(cmd);
         
         tokenise(cmddup,param);
@@ -67,7 +66,7 @@ int main(int argc, char** argv) {
         if (strcmp(cmd,"quit")==0){
             break;
         }
-
+        //It's a built-in command 
         if(checkbuiltin(param[0])==1){
 
             if(strcmp(param[0],"exit")==0 && numofParam == 1){
@@ -89,15 +88,33 @@ int main(int argc, char** argv) {
                 chclr();
 
             }
+
+            if (strcmp(param[0],"help")==0 && numofParam == 1){
+                
+                help();
+
+            }
+
+            if(strcmp(param[0],"pwd")==0 && numofParam==1){
+                
+                pwd();
+            
+            }
+
+            if(strcmp(param[0],"prt")==0){
+
+                prt();
+                
+            }
             
             getPrompt(usertoggle,hosttoggle);
 
         }
-        
+        //Not a built in command 
         else{
 
-            char *temp = malloc(4096);
-            strcpy(temp,"");
+            char temp[4096] = "";
+            //strcpy(temp,"");
             for(int i=0;i<numofPath;i++){
 
                 strcpy(temp,patharray[i]);
@@ -106,7 +123,8 @@ int main(int argc, char** argv) {
 
                 if (file_exist (temp))
                 {
-                  
+                    //Check if fork fails 
+                    found = 1;
                     if(fork()==0){
                         execvp(temp,param);  
                         break;
@@ -115,56 +133,32 @@ int main(int argc, char** argv) {
 
                     wait(NULL);
                 }
-                
             }
-            char exec[1024]="";
-            getcwd(exec, sizeof(exec));
-            strcat(exec,"/");
-            strcat(exec,param[0]);
-            if (file_exist (exec))
-            {
-              
-                if(fork()==0){
-                    execvp(exec,param);  
-                    exit(0);
-                }
 
-                wait(NULL);
+            // Comes here if not found in path. It checks in current working directory if executable is present.
+            if(found == 0){
+
+                char exec[1024]="";
+                getcwd(exec, sizeof(exec));
+                strcat(exec,"/");
+                strcat(exec,param[0]);
+                if (file_exist (exec))
+                {
+                    // check if fork fails 
+                    if(fork()==0){
+                        execvp(exec,param);  
+                        exit(0);
+                    }
+
+                    wait(NULL);
+                }
+                //No command fouund 
+                else {
+                    printf("%s%s\n",param[0],": command not found");
+                }
             }
-            free(temp);
         }
         
-        // if(fork() == 0){
-
-        //     if (strcmp(param[0],"help")==0 && numofParam == 1){
-        //         printf("%s\n","*******YO BITCH GET OUT DA WAY*********");
-        //     }
-
-        //     // This is PWD
-
-        //     if(strcmp(param[0],"pwd")==0 && numofParam==1){
-
-        //         char cwd[1024];
-
-        //         if (getcwd(cwd, sizeof(cwd)) != NULL){
-
-        //         fprintf(stdout, "Current working dir: %s\n", cwd);
-
-        //         }
-        //     }
-            
-        //     if(strcmp(param[0],"prt")==0){
-        //         prt();
-                
-        //     }
-
-        //     exit(0);  
-        // }
-
-        // //this is the parent processs......
-        // else{
-        //     wait(NULL);
-        // }
            
 
         //printf("%s\n",cmd);
@@ -251,7 +245,28 @@ void tokenisePath(){
 
 }
 
+void help(){
 
+    pid_t pid = fork();
+                
+    if (pid == -1) 
+    {
+        perror("Error forking");
+        // return -1;
+    }
+    
+    else if (pid > 0)
+    {
+        wait(NULL); 
+    }
+    
+    else 
+    {
+        
+        printf("%s\n","I am help. Please update me" );
+        exit(0);
+    }
+}
 
 void cd(){
 
@@ -298,26 +313,70 @@ void cd(){
 
     firstcd = 1;
 }
+void pwd(){
 
+    pid_t pid = fork();
+                
+    if (pid == -1) 
+    {
+        perror("Error forking");
+        // return -1;
+    }
+    
+    else if (pid > 0)
+    {
+        wait(NULL); 
+    }
+    
+    else 
+    {
+        char cwd[1024];
+        
+        if (getcwd(cwd, sizeof(cwd)) != NULL){
+        printf("%s\n", cwd);
+        exit(0);
+        }
+    }
+}
 
 void prt(){
-    char *name[4];
-    name[0] = "sh";
-    name[1] = "-c";
-    name[2] = "echo $?";
-    name[3] = NULL;
-    execvp("/bin/sh", name);
+    
+    pid_t pid = fork();
+                
+    if (pid == -1) 
+    {
+        perror("Error forking");
+        // return -1;
+    }
+    else if (pid > 0)
+    {
+         
+         wait(NULL); 
+    }
+    else 
+    {
+        char *name[4];
+        name[0] = "sh";
+        name[1] = "-c";
+        name[2] = "echo $?";
+        name[3] = NULL;
+        execvp("/bin/sh", name);
+        exit(0);
+    }
+    
 }
 
 
 void getPrompt(char *user, char *host){
 
+    hostname[1023] = '\0';
+    gethostname(hostname, 1023);
+    strcpy(username,getenv("USER"));
     strcpy(prompt,"");
 
     strcat(prompt,sfish); 
     char filename[1024] ="";
     size_t homelen = strlen(getenv("HOME"));
-
 
     if( strcmp(user,"1")==0 || strcmp(host,"1")==0){
         strcat(prompt,dash);

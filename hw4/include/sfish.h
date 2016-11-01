@@ -8,6 +8,8 @@ void prt();
 void getPrompt();
 void chpmt();
 void chclr();
+void pwd();
+void help();
 void tokenisePath();
 int checkbuiltin(char *param);
 
