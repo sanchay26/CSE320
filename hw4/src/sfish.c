@@ -169,8 +169,6 @@ int main(int argc, char** argv) {
         }
         
         revertfiledescriptor();
-        printf("%s\n","I am reset");  
-
         //printf("%s\n",cmd);
 
         //All your debug print statments should be surrounded by this #ifdef
@@ -219,6 +217,9 @@ void tokenise(char *cmddup, char **param){
         return;
     }
     param[0] = init;
+    if(strcmp(param[0],"<")==0 || strcmp(param[0],">")==0 || strcmp(param[0],"|")==0){
+        return;
+    }
     numofParam++;
     while (init != NULL)
     {
@@ -538,13 +539,16 @@ void chclr(){
             }
 
         }
+
         if(strcmp(param[3],"0")==0){
             userbold = 0 ;
         }
+
         else if(strcmp(param[3],"1")==0){
             userbold =1;
         }
     }
+    
     if(strcmp(param[1],"machine") ==0){
 
         for(int i=0;i<8;i++){
@@ -591,10 +595,12 @@ void revertfiledescriptor(){
 
         dup2(dfd,STDOUT_FILENO);
     }
+
     if(inputredirect == 1){
 
         dup2(dfd,STDIN_FILENO);
     }
+
     outputredirect = 0;
     inputredirect = 0;
 }
