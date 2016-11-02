@@ -11,6 +11,8 @@ void chclr();
 void pwd();
 void help();
 void tokenisePath();
+void testtokenise(char *cmddup, char **param);
 int checkbuiltin(char *param);
-
+void redirection();
 int file_exist(char *filename);
+void revertfiledescriptor();

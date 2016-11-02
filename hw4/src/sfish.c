@@ -2,14 +2,17 @@
 #include <unistd.h> 
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 
 #define MAX_PARAMS 15
 
 int numofParam=0;
+int numofParamcpy = 0;
 int numofPath = 0;
 int exitFlag =0;
 char *param[MAX_PARAMS+1];
+char *paramcpy[MAX_PARAMS+1];
 char *patharray[4096];
 char prevDir[1024];
 int firstcd = 0;
@@ -26,6 +29,10 @@ int usercolor = 2 ;
 int hostcolor = 0 ;
 int userbold = 0;
 int hostbold = 0;
+int outputredirect = 0;
+int inputredirect = 0;
+int dfd;
+int fd;
 
 char *builtin[] = {"exit","cd","chpmt","chclr","help","pwd","prt"};
 
@@ -56,7 +63,10 @@ int main(int argc, char** argv) {
         int found = 0;
         char* cmddup = strdup(cmd);
         
-        tokenise(cmddup,param);
+        testtokenise(cmddup,param);
+        redirection();
+
+        //tokenise(cmddup,param);
 
 
         if(numofParam == 0){
@@ -126,8 +136,7 @@ int main(int argc, char** argv) {
                     //Check if fork fails 
                     found = 1;
                     if(fork()==0){
-                        execvp(temp,param);  
-                        break;
+                        execvp(temp,param); 
                         exit(0);
                     }
 
@@ -159,7 +168,8 @@ int main(int argc, char** argv) {
             }
         }
         
-           
+        revertfiledescriptor();
+        printf("%s\n","I am reset");  
 
         //printf("%s\n",cmd);
 
@@ -196,13 +206,15 @@ int file_exist (char *filename)
   struct stat   buffer;   
   return (stat (filename, &buffer) == 0);
 }
+
+
 void tokenise(char *cmddup, char **param){
 
     char *init;
     int i = 1;
     numofParam = 0;
     init = strtok (cmddup," ");
-    
+
     if(init == NULL){
         return;
     }
@@ -217,7 +229,61 @@ void tokenise(char *cmddup, char **param){
         i++;
         numofParam++;
     }
+}
+void testtokenise(char *cmddup, char **param){
 
+    char *init;
+    char *tok;
+    
+    int i = 1;
+    int k = 1;
+    
+    numofParam = 0;
+    numofParamcpy = 0;
+    
+    init = strtok (cmddup," ");
+
+    if(init == NULL){
+        return;
+    }
+    param[0] = init;
+    paramcpy[0] = init;
+    numofParam++;
+    while (init != NULL)
+    {
+        tok = strtok (NULL, " ");
+        
+        if(tok == NULL) 
+        break;
+
+        if(strcmp(tok,">")==0){
+            outputredirect = 1;
+        }
+        if(strcmp(tok,"<")==0){
+            inputredirect = 1;
+        }
+        
+        if(outputredirect !=1 && inputredirect !=1 ){
+            param[i] = tok;
+            paramcpy[k] = tok;
+            i++; k++;
+        }
+        else{
+            paramcpy[k] = tok;
+            k++;
+        }
+        numofParam = i;
+        numofParamcpy = k;
+    }
+    // for (int m = 0; m < numofParam; m++)
+    // {
+    //     printf("%s ",param[m]);
+    // }
+    // printf("\n");
+    // for (int n = 0; n < numofParamcpy; n++)
+    // {
+    //     printf("%s ************",paramcpy[n]);
+    // }
 }
 
 void tokenisePath(){
@@ -422,11 +488,18 @@ void getPrompt(char *user, char *host){
     getcwd(cwd, sizeof(cwd));
 
     size_t totalsize = strlen(cwd);
-
-    strncpy(filename,cwd+homelen,totalsize-homelen);
+    
+    if(strcmp(cwd,getenv("HOME"))==0){
+        strcpy(filename,"~");
+    }
+    
+    else{
+        strncpy(filename,cwd+homelen,totalsize-homelen);
+    }
+    
     strcat(prompt,filename);
     strcat(prompt,"]");
-    strcat(prompt,">");
+    strcat(prompt,"> ");
 }
 
 void chpmt(){
@@ -487,4 +560,41 @@ void chclr(){
             hostbold =1;
         }
     }
+}
+
+
+void redirection(){
+
+    for (int i = 0; i < numofParamcpy; i++)
+    {
+        if(strcmp(paramcpy[i],">")==0){
+
+            fd = open(paramcpy[i+1],O_CREAT | O_WRONLY,0666);
+            dfd = dup(STDOUT_FILENO);
+            dup2(fd,STDOUT_FILENO);
+            close(fd);
+        }
+        if(strcmp(paramcpy[i],"<")==0){
+
+            fd = open(paramcpy[i+1],O_RDONLY,0666);
+            dfd = dup(STDIN_FILENO);
+            dup2(fd,STDIN_FILENO);
+            close(fd);
+        }
+    }
+}
+
+void revertfiledescriptor(){
+
+
+    if(outputredirect == 1){
+
+        dup2(dfd,STDOUT_FILENO);
+    }
+    if(inputredirect == 1){
+
+        dup2(dfd,STDIN_FILENO);
+    }
+    outputredirect = 0;
+    inputredirect = 0;
 }
