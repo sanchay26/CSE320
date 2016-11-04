@@ -13,12 +13,13 @@ int numofPath = 0;
 int exitFlag =0;
 char *param[MAX_PARAMS+1];
 char *paramcpy[MAX_PARAMS+1];
-char *patharray[4096];
+char *pipetoken[MAX_PARAMS+1];
+char *patharray[1024];
 char prevDir[1024];
 int firstcd = 0;
-char hostname[1024];
-char username[1024];
-char prompt[4098];
+char hostname[500];
+char username[500];
+char prompt[1024];
 char *dash = "-";
 char *colon = ":";
 char *attherate = "@";
@@ -33,6 +34,7 @@ int outputredirect = 0;
 int inputredirect = 0;
 int dfd;
 int fd;
+int found = 0;
 
 char *builtin[] = {"exit","cd","chpmt","chclr","help","pwd","prt"};
 
@@ -60,10 +62,12 @@ int main(int argc, char** argv) {
     
     while((cmd = readline(prompt)) != NULL) {
 
-        int found = 0;
-        char* cmddup = strdup(cmd);
-        
-        testtokenise(cmddup,param);
+        found = 0;
+        char *cmddup = strdup(cmd);
+
+        tokenisePipe(cmddup,param);
+               
+        //testtokenise(cmddup,param);
         redirection();
 
         //tokenise(cmddup,param);
@@ -122,25 +126,54 @@ int main(int argc, char** argv) {
         }
         //Not a built in command 
         else{
+            
+            // if(fork()==0){
+            //    execute();  
+            // }
+            // wait(NULL);
 
-            char temp[4096] = "";
+        }
+        printf("%s\n",cmd);
+        revertfiledescriptor();
+
+        //printf("%s\n",cmd);
+
+        //All your debug print statments should be surrounded by this #ifdef
+        //block. Use the debug target in the makefile to run with these enabled.
+        #ifdef DEBUG
+        fprintf(stderr, "Length of command entered: %ld\n", strlen(cmd));
+        #endif
+        //You WILL lose points if your shell prints out garbage values.
+        printf("*****after%s\n",cmd);
+    }
+    printf("*****%s\n",cmd);
+    //Don't forget to free allocated memory, and close file descriptors.
+    free(cmd);
+    //WE WILL CHECK VALGRIND!
+
+    return EXIT_SUCCESS;
+}
+
+void execute(){
+
+    char temp[4096] = "";
             //strcpy(temp,"");
             for(int i=0;i<numofPath;i++){
 
                 strcpy(temp,patharray[i]);
                 strcat(temp,"/");
                 strcat(temp,param[0]);
-
                 if (file_exist (temp))
                 {
                     //Check if fork fails 
                     found = 1;
-                    if(fork()==0){
-                        execvp(temp,param); 
-                        exit(0);
-                    }
+                    //if(fork()==0){
+                    execvp(temp,param);
 
-                    wait(NULL);
+                    //    exit(0);
+                    //}
+
+                    //wait(NULL);
                 }
             }
 
@@ -154,37 +187,19 @@ int main(int argc, char** argv) {
                 if (file_exist (exec))
                 {
                     // check if fork fails 
-                    if(fork()==0){
-                        execvp(exec,param);  
-                        exit(0);
-                    }
+                    //if(fork()==0){
+                    execvp(exec,param);  
+                    //    exit(0);
+                    //}
 
-                    wait(NULL);
+                    //wait(NULL);
                 }
                 //No command fouund 
                 else {
                     printf("%s%s\n",param[0],": command not found");
                 }
             }
-        }
-        
-        revertfiledescriptor();
-        //printf("%s\n",cmd);
 
-        //All your debug print statments should be surrounded by this #ifdef
-        //block. Use the debug target in the makefile to run with these enabled.
-        #ifdef DEBUG
-        fprintf(stderr, "Length of command entered: %ld\n", strlen(cmd));
-        #endif
-        //You WILL lose points if your shell prints out garbage values.
-
-    }
-
-    //Don't forget to free allocated memory, and close file descriptors.
-    free(cmd);
-    //WE WILL CHECK VALGRIND!
-
-    return EXIT_SUCCESS;
 }
 
 int checkbuiltin(char *param){
@@ -217,9 +232,7 @@ void tokenise(char *cmddup, char **param){
         return;
     }
     param[0] = init;
-    if(strcmp(param[0],"<")==0 || strcmp(param[0],">")==0 || strcmp(param[0],"|")==0){
-        return;
-    }
+    
     numofParam++;
     while (init != NULL)
     {
@@ -230,6 +243,9 @@ void tokenise(char *cmddup, char **param){
         i++;
         numofParam++;
     }
+    
+    
+    printf("\n");
 }
 void testtokenise(char *cmddup, char **param){
 
@@ -248,6 +264,9 @@ void testtokenise(char *cmddup, char **param){
         return;
     }
     param[0] = init;
+    // if(strcmp(param[0],"<")==0 || strcmp(param[0],">")==0 || strcmp(param[0],"|")==0){
+    //     return;
+    // }
     paramcpy[0] = init;
     numofParam++;
     while (init != NULL)
@@ -263,6 +282,7 @@ void testtokenise(char *cmddup, char **param){
         if(strcmp(tok,"<")==0){
             inputredirect = 1;
         }
+
         
         if(outputredirect !=1 && inputredirect !=1 ){
             param[i] = tok;
@@ -285,6 +305,80 @@ void testtokenise(char *cmddup, char **param){
     // {
     //     printf("%s ************",paramcpy[n]);
     // }
+}
+void tokenisePipe(char *cmddup, char **param){
+
+    char *init;
+    int numofPipe = 0;
+    //char *tok;
+    int i = 1;
+    init = strtok (cmddup,"|");
+
+    if(init == NULL){
+        return;
+    }
+    pipetoken[0] = init;
+
+    while (init != NULL){
+
+        pipetoken[i] = strtok (NULL, "|");
+        
+        if(pipetoken[i] == NULL) 
+        break;
+        
+        i++;
+    }
+    numofPipe = i-1;
+   
+    int pipefds[numofPipe*2];
+
+    int outdup = dup(STDOUT_FILENO);
+
+    for(int i = 0; i<numofPipe; i+=2){
+        pipe(pipefds+i);
+    }
+
+    for (int count = 0; count <= numofPipe; count++)
+    {
+        tokenise(pipetoken[count],param);
+
+        pid_t pid = fork();
+                
+        if (pid == -1) 
+        {
+            perror("Error forking");
+            // return -1;
+        }
+
+        else if(pid == 0)
+        {
+
+            if(count!=0){
+                dup2(pipefds[(count-1)*2],STDIN_FILENO);
+            }
+            dup2(outdup,1);
+            if(count != numofPipe){
+                dup2(pipefds[count*2+1],STDOUT_FILENO);
+            }
+            close(pipefds[(count-1)*2]);
+            execute();
+
+            exit(0);
+        }
+        
+        else
+        {
+            //printf("%s\n","kakak");
+            wait(NULL);
+            if(count < numofPipe)
+            {
+                close(pipefds[count*2+1]);
+            }
+            
+             
+        }
+       // printf("in pipe%s\n",cmd );
+    }
 }
 
 void tokenisePath(){
@@ -548,10 +642,10 @@ void chclr(){
             userbold =1;
         }
     }
-    
+
     if(strcmp(param[1],"machine") ==0){
 
-        for(int i=0;i<8;i++){
+        for(int i=0;i<8                        ;i++){
             
             if(strcmp(param[2],promptcolor[i])==0){
                 hostcolor = i;
