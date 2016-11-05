@@ -16,7 +16,7 @@ char *paramcpy[MAX_PARAMS+1];
 char *pipetoken[MAX_PARAMS+1];
 char *patharray[1024];
 char prevDir[1024];
-int firstcd = 0;
+int  firstcd = 0;
 char hostname[500];
 char username[500];
 char prompt[1024];
@@ -35,6 +35,7 @@ int inputredirect = 0;
 int dfd;
 int fd;
 int found = 0;
+int enabledpipe = 0;
 
 char *builtin[] = {"exit","cd","chpmt","chclr","help","pwd","prt"};
 
@@ -44,7 +45,8 @@ char *colorcodes[] ={"\x1b[31m","\x1b[32m","\x1b[34m","\x1b[33m","\x1b[30m","\x1
 
 char * colorBoldCodes[]  = {"\033[1m\033[31m","\033[1m\033[32m","\033[1m\033[34m","\033[1m\033[33m", "\033[1m\033[30m","\033[1m\033[37m" ,"\033[1m\033[35m","\033[1m\033[36m" };
 
-
+job *first_job = NULL;
+job *last_job = NULL;
 
 
 int main(int argc, char** argv) {
@@ -56,21 +58,38 @@ int main(int argc, char** argv) {
     char *cmd;
     
     getPrompt("1","1");
-    
+
     tokenisePath();
 
-    
     while((cmd = readline(prompt)) != NULL) {
 
         found = 0;
-        char *cmddup = strdup(cmd);
+        enabledpipe = 0;
 
-        tokenisePipe(cmddup,param);
-               
-        //testtokenise(cmddup,param);
+        for(int i =0; i<MAX_PARAMS;i++){
+        param[i] = NULL;
+        }
+        char cmddup[strlen(cmd)];
+
+        strcpy(cmddup,cmd);
+
+        //job* newjob = createnewjob();
+
+        //newjob->command = cmd;
+
+       
+        //tokeniseProcess(newjob,cmddup);
+
+        //printjobs();
+
+        testtokenise(cmddup,param);
+        
+        if(enabledpipe==1){
+
+            tokenisePipe(cmddup);
+        }
+        
         redirection();
-
-        //tokenise(cmddup,param);
 
 
         if(numofParam == 0){
@@ -84,7 +103,6 @@ int main(int argc, char** argv) {
         if(checkbuiltin(param[0])==1){
 
             if(strcmp(param[0],"exit")==0 && numofParam == 1){
-                
                 exit(3);
             }
 
@@ -93,47 +111,37 @@ int main(int argc, char** argv) {
             }
 
             if(strcmp(param[0],"chpmt")==0 && numofParam == 3){
-
                 chpmt();
             }
 
             if(strcmp(param[0],"chclr")==0 && numofParam == 4){
-               
                 chclr();
-
             }
 
             if (strcmp(param[0],"help")==0 && numofParam == 1){
-                
                 help();
-
             }
 
             if(strcmp(param[0],"pwd")==0 && numofParam==1){
-                
                 pwd();
-            
             }
 
             if(strcmp(param[0],"prt")==0){
-
                 prt();
-                
             }
             
             getPrompt(usertoggle,hosttoggle);
-
         }
         //Not a built in command 
-        else{
-            
-            // if(fork()==0){
-            //    execute();  
-            // }
-            // wait(NULL);
+        else if(enabledpipe == 0){
+
+            if(fork()==0){
+               execute(param);  
+            }
+            wait(NULL);
 
         }
-        printf("%s\n",cmd);
+        
         revertfiledescriptor();
 
         //printf("%s\n",cmd);
@@ -144,7 +152,6 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Length of command entered: %ld\n", strlen(cmd));
         #endif
         //You WILL lose points if your shell prints out garbage values.
-        printf("*****after%s\n",cmd);
     }
     printf("*****%s\n",cmd);
     //Don't forget to free allocated memory, and close file descriptors.
@@ -154,51 +161,40 @@ int main(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
-void execute(){
+void execute(char **tokenisedpipe){
 
     char temp[4096] = "";
-            //strcpy(temp,"");
-            for(int i=0;i<numofPath;i++){
+    
+    for(int i=0;i<numofPath;i++){
 
-                strcpy(temp,patharray[i]);
-                strcat(temp,"/");
-                strcat(temp,param[0]);
-                if (file_exist (temp))
-                {
-                    //Check if fork fails 
-                    found = 1;
-                    //if(fork()==0){
-                    execvp(temp,param);
+        strcpy(temp,patharray[i]);
+        strcat(temp,"/");
+        strcat(temp,tokenisedpipe[0]);
+        if (file_exist (temp))
+        {
+            found = 1;
+            execvp(temp,tokenisedpipe);
+        }
+    }
 
-                    //    exit(0);
-                    //}
+    // Comes here if not found in path. It checks in current working directory if executable is present.
+    
+    if(found == 0){
 
-                    //wait(NULL);
-                }
-            }
+        char exec[1024]="";
+        getcwd(exec, sizeof(exec));
+        strcat(exec,"/");
+        strcat(exec,tokenisedpipe[0]);
+        if (file_exist (exec))
+        {
+            execvp(exec,tokenisedpipe);  
+        }
+        //No command fouund 
+        else {
 
-            // Comes here if not found in path. It checks in current working directory if executable is present.
-            if(found == 0){
-
-                char exec[1024]="";
-                getcwd(exec, sizeof(exec));
-                strcat(exec,"/");
-                strcat(exec,param[0]);
-                if (file_exist (exec))
-                {
-                    // check if fork fails 
-                    //if(fork()==0){
-                    execvp(exec,param);  
-                    //    exit(0);
-                    //}
-
-                    //wait(NULL);
-                }
-                //No command fouund 
-                else {
-                    printf("%s%s\n",param[0],": command not found");
-                }
-            }
+            printf("%s%s\n",param[0],": command not found");
+        }
+    }
 
 }
 
@@ -221,7 +217,7 @@ int file_exist (char *filename)
 }
 
 
-void tokenise(char *cmddup, char **param){
+void tokenise(char *cmddup, char **tokenisedpipe){
 
     char *init;
     int i = 1;
@@ -231,27 +227,24 @@ void tokenise(char *cmddup, char **param){
     if(init == NULL){
         return;
     }
-    param[0] = init;
+    tokenisedpipe[0] = init;
     
-    numofParam++;
+    //numofParam++;
     while (init != NULL)
     {
-        param[i] = strtok (NULL, " ");
-        if(param[i] == NULL) 
+        tokenisedpipe[i] = strtok (NULL, " ");
+        if(tokenisedpipe[i] == NULL) 
         break;
         
         i++;
-        numofParam++;
     }
-    
-    
-    printf("\n");
 }
-void testtokenise(char *cmddup, char **param){
+
+void testtokenise(char *cmd, char **param){
 
     char *init;
     char *tok;
-    
+    char *cmddup = strdup(cmd);
     int i = 1;
     int k = 1;
     
@@ -279,8 +272,13 @@ void testtokenise(char *cmddup, char **param){
         if(strcmp(tok,">")==0){
             outputredirect = 1;
         }
+
         if(strcmp(tok,"<")==0){
             inputredirect = 1;
+        }
+
+        if(strcmp(tok,"|")==0){
+            enabledpipe = 1;
         }
 
         
@@ -298,7 +296,7 @@ void testtokenise(char *cmddup, char **param){
     }
     // for (int m = 0; m < numofParam; m++)
     // {
-    //     printf("%s ",param[m]);
+    //     printf("HIII%s ",param[m]);
     // }
     // printf("\n");
     // for (int n = 0; n < numofParamcpy; n++)
@@ -306,7 +304,7 @@ void testtokenise(char *cmddup, char **param){
     //     printf("%s ************",paramcpy[n]);
     // }
 }
-void tokenisePipe(char *cmddup, char **param){
+void tokenisePipe(char *cmddup){
 
     char *init;
     int numofPipe = 0;
@@ -337,10 +335,12 @@ void tokenisePipe(char *cmddup, char **param){
     for(int i = 0; i<numofPipe; i+=2){
         pipe(pipefds+i);
     }
-
+    char *tokenisedpipe[MAX_PARAMS+1];
+    memset(tokenisedpipe, 0, sizeof(tokenisedpipe));
     for (int count = 0; count <= numofPipe; count++)
     {
-        tokenise(pipetoken[count],param);
+
+        tokenise(pipetoken[count],tokenisedpipe);
 
         pid_t pid = fork();
                 
@@ -361,28 +361,25 @@ void tokenisePipe(char *cmddup, char **param){
                 dup2(pipefds[count*2+1],STDOUT_FILENO);
             }
             close(pipefds[(count-1)*2]);
-            execute();
+            execute(tokenisedpipe);
 
             exit(0);
         }
         
         else
         {
-            //printf("%s\n","kakak");
             wait(NULL);
             if(count < numofPipe)
             {
                 close(pipefds[count*2+1]);
             }
-            
-             
         }
-       // printf("in pipe%s\n",cmd );
+       
     }
 }
 
 void tokenisePath(){
-    //patharray = malloc(1024*strlen(getenv("PATH")));
+
     char *init;
     int i = 1;
     numofPath = 0;
@@ -405,6 +402,39 @@ void tokenisePath(){
     }
 
 }
+
+void tokeniseProcess(job *jobprocess, char *cmd){
+
+    int i;
+    int j;
+    i=0;  
+    char* token;
+    char* token1;
+    while ((token = strsep(&cmd,"|")) != NULL)
+    {
+        if(strcmp(token, "") != 0)
+        {       
+            process* pro = createnewprocess(jobprocess);
+
+            pro->completearg = token;
+        
+            j=0;  
+            
+            while ((token1 = strsep(&token," ")) != NULL)
+            {
+                if(strcmp(token1, "") != 0)
+                {       
+                    pro->argument[j] = token1;
+                    j++;    
+                }       
+            }
+
+            i++;    
+        }       
+    }
+}
+
+
 
 void help(){
 
@@ -697,4 +727,73 @@ void revertfiledescriptor(){
 
     outputredirect = 0;
     inputredirect = 0;
+}
+
+
+
+
+job* createnewjob(){
+
+    job* newjob = malloc(sizeof(job));
+
+    newjob->first_process = NULL;
+
+    addjobtolist(newjob);
+
+return newjob;
+}
+
+
+void addjobtolist(job* newjob){
+
+    if(first_job== NULL){
+        first_job = newjob;
+        last_job = newjob;
+        first_job->next = NULL;
+        last_job->next = NULL;
+    }
+    else{
+        last_job->next = newjob;
+        last_job =last_job->next;
+        last_job->next = NULL;
+    }
+
+}
+
+process* createnewprocess(job *jobprocess){
+
+    process* newprocess = malloc(sizeof(process));
+
+    addprocesstolist(jobprocess,newprocess);
+
+    return newprocess;
+}
+
+void addprocesstolist(job* existingjob , process* newprocess){
+
+    if(existingjob->first_process == NULL){
+        printf("%s\n","first_process");
+        existingjob->first_process = newprocess;
+        existingjob->last_process = newprocess;
+
+    }
+    else{
+        printf("second process");
+        existingjob->last_process->next = newprocess;
+        existingjob->last_process = existingjob->last_process->next;
+        existingjob->last_process->next = NULL;
+    }
+
+}
+
+void printjobs(){
+    
+
+    for(job *j=first_job; j!=NULL; j=j->next){
+
+        printf("jobscommand%s\n",j->command);
+        for (process *p = j->first_process; p!=NULL ; p = p->next){
+            printf("complete arg%s\n",p->completearg);
+        }
+    }
 }
