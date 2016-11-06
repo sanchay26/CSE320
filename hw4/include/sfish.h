@@ -51,3 +51,4 @@ void addprocesstolist(job* existingjob , process* newprocess);
 process* createnewprocess(job *jobprocess);
 
 void printjobs();
+void removespaces(char* s);

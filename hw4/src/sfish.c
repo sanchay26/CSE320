@@ -70,11 +70,9 @@ int main(int argc, char** argv) {
         enabledpipe = 0;
         bg = 0;
 
-        //char* inputfile = NULL;
-        //char* outputfile = NULL;
-
         for(int i =0; i<MAX_PARAMS;i++){
-        param[i] = NULL;
+            
+            param[i] = NULL;
         }
         
         char* cmddup = strdup(cmd);
@@ -152,7 +150,6 @@ int main(int argc, char** argv) {
         #endif
         //You WILL lose points if your shell prints out garbage values.
     }
-    printf("*****%s\n",cmd);
     //Don't forget to free allocated memory, and close file descriptors.
     free(cmd);
     //WE WILL CHECK VALGRIND!
@@ -170,7 +167,6 @@ void execute(char **tokenisedpipe, char* inputfile, char* outputfile, int count,
         dfd = dup(STDIN_FILENO);
         dup2(fd,STDIN_FILENO);
         close(fd);
-        printf("%s\n","In here" );
     }
     
     if(count == numofPipe && outputfile != NULL)
@@ -180,7 +176,6 @@ void execute(char **tokenisedpipe, char* inputfile, char* outputfile, int count,
         dfd = dup(STDOUT_FILENO);
         dup2(fd,STDOUT_FILENO);
         close(fd);
-        printf("%s\n","In here" );
     }
     
     for(int i=0;i<numofPath;i++){
@@ -346,32 +341,30 @@ void tokenisePipe(char *cmd){
 
     pipetoken[0] = init;
 
-    printf("%s\n",pipetoken[0]);
     while (init != NULL){
 
         pipetoken[i] = strtok (NULL, "|");
 
         if(pipetoken[i] == NULL) 
         break;
-        printf("%s\n",pipetoken[i]);
         
         i++;
     }
     numofPipe = i-1;
     int pipefds[numofPipe*2];
 
-    int outdup = dup(STDOUT_FILENO);
+    //int outdup = dup(STDOUT_FILENO);
 
-    for(int i = 0; i<numofPipe; i+=2){
-        pipe(pipefds+i);
+    for(int i = 0; i<numofPipe; i++){
+        pipe(pipefds+(i*2));
     }
     
     char *tokenisedpipe[MAX_PARAMS+1];
     int status;
-    //memset(tokenisedpipe, 0, sizeof(tokenisedpipe));
+    
     for (int count = 0; count <= numofPipe; count++)
     {
-        
+        memset(tokenisedpipe, 0, sizeof(tokenisedpipe));
         //---------------------------------------------------------------------
         if(count == 0){
 
@@ -383,13 +376,16 @@ void tokenisePipe(char *cmd){
                 {
                     inputfile = strsep(&pipetoken[count], ">");
                     //check for spaces 
+                    removespaces(inputfile);
                     outputfile = strsep(&pipetoken[count], ">");
                     //check for spaces
+                    removespaces(outputfile);
                 }
                 else
                 {
                     inputfile = strsep(&pipetoken[count], "<");
                     //check for spaces
+                    removespaces(inputfile);
                 }
 
             }
@@ -399,8 +395,10 @@ void tokenisePipe(char *cmd){
                 final = strsep(&pipetoken[count], ">");
                 outputfile = strsep(&pipetoken[count], ">");
                 //check for spaces
+                removespaces(outputfile);
             }
             else{
+                
                 final = pipetoken[count];
             }
 
@@ -414,6 +412,10 @@ void tokenisePipe(char *cmd){
                 final = strsep(&pipetoken[count], ">");
                 outputfile = strsep(&pipetoken[count], ">");
                 //check for spaces
+                removespaces(outputfile);
+            }
+            else{
+                final = pipetoken[count];
             }
 
             tokenise(final,tokenisedpipe);
@@ -421,36 +423,36 @@ void tokenisePipe(char *cmd){
         else{
 
             tokenise(final,tokenisedpipe);
-            printf("%s\n", "here");
         }
 
         pid_t pid = fork();
-                
-        if (pid == -1) 
-        {
-            perror("Error forking");
-            // return -1;
-        }
 
-        else if(pid == 0)
+        if(pid == 0)
         {
-            printf("Process:%dInfile:%dOutfile:%d\n",count,pipefds[(count-1)*2],pipefds[count*2+1]);
+            //printf("Process:%dInfile:%dOutfile:%d\n",count,pipefds[(count-1)*2],pipefds[count*2+1]);
 
             if(count!=0){
                 dup2(pipefds[(count-1)*2],STDIN_FILENO);
             }
             
-            dup2(outdup,1);
+           // dup2(outdup,1);
             
-            if(count != numofPipe && count > 0){
+            if(count != numofPipe && numofPipe > 0){
                 dup2(pipefds[count*2+1],STDOUT_FILENO);
             }
             
             //printf("%s\n",inputfile);
             execute(tokenisedpipe,inputfile,outputfile,count,numofPipe);
 
-            //exit(0);
+            exit(0);
         }
+                
+        else if (pid == -1) 
+        {
+            perror("Error forking");
+            // return -1;
+        }
+
         
         else
         {
@@ -458,11 +460,11 @@ void tokenisePipe(char *cmd){
             {
                 waitpid(pid, &status, WUNTRACED);
             }
-            if(count < numofPipe)
+            if(count < numofPipe && numofPipe > 0)
             {
                 close(pipefds[count*2+1]);
             }
-            if(count > 0)
+            if(count > 0 && numofPipe > 0)
             {
                 close(pipefds[(count - 1)*2]);
             }
@@ -728,6 +730,9 @@ void getPrompt(char *user, char *host){
     if(strcmp(cwd,getenv("HOME"))==0){
         strcpy(filename,"~");
     }
+    else if(strstr(cwd,getenv("HOME"))==NULL){
+        strcpy(filename,cwd);
+    }
     
     else{
         strncpy(filename,cwd+homelen,totalsize-homelen);
@@ -907,4 +912,20 @@ void printjobs(){
             printf("complete arg%s\n",p->completearg);
         }
     }
+}
+
+void removespaces(char* s)
+{
+    char *p = s;
+    int len = strlen(p);
+    while(isspace(p[len - 1]))
+    {
+        p[--len] = 0;
+    }
+    while(*p && isspace(*p))
+    {
+        ++p;
+        --len;
+    }
+    memmove(s, p, len + 1);
 }
