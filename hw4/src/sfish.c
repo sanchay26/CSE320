@@ -36,6 +36,7 @@ int dfd;
 int fd;
 int found = 0;
 int enabledpipe = 0;
+int bg;
 
 char *builtin[] = {"exit","cd","chpmt","chclr","help","pwd","prt"};
 
@@ -57,7 +58,7 @@ int main(int argc, char** argv) {
     
     char *cmd;
 
-    int bg = 0;
+    bg = 0;
     
     getPrompt("1","1");
 
@@ -69,34 +70,29 @@ int main(int argc, char** argv) {
         enabledpipe = 0;
         bg = 0;
 
-        char* inputfile;
-        char* outputfile;
+        //char* inputfile = NULL;
+        //char* outputfile = NULL;
 
         for(int i =0; i<MAX_PARAMS;i++){
         param[i] = NULL;
         }
-        char cmddup[strlen(cmd)];
+        
+        char* cmddup = strdup(cmd);
 
-        strcpy(cmddup,cmd);
+        //strcpy(cmddup,cmd);
 
         //job* newjob = createnewjob();
 
         //newjob->command = cmd;
 
        
-        //tokeniseProcess(newjob,cmddup,inputfile,outputfile);
+        //tokeniseProcess(newjob,cmddup,inputfile, outputfile);
 
         //printjobs();
+        
 
         testtokenise(cmddup,param);
         
-        if(enabledpipe==1){
-
-            tokenisePipe(cmddup);
-        }
-        
-        redirection();
-
 
         if(numofParam == 0){
             continue;
@@ -139,12 +135,9 @@ int main(int argc, char** argv) {
             getPrompt(usertoggle,hosttoggle);
         }
         //Not a built in command 
-        else if(enabledpipe == 0){
+        else {
 
-            if(fork()==0){
-               execute(param);  
-            }
-            wait(NULL);
+          tokenisePipe(cmddup);
 
         }
         
@@ -167,9 +160,28 @@ int main(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
-void execute(char **tokenisedpipe){
+void execute(char **tokenisedpipe, char* inputfile, char* outputfile, int count, int numofPipe){
 
     char temp[4096] = "";
+    
+    if(count == 0 && inputfile != NULL)
+    {
+        fd = open(inputfile,O_RDONLY,0666);
+        dfd = dup(STDIN_FILENO);
+        dup2(fd,STDIN_FILENO);
+        close(fd);
+        printf("%s\n","In here" );
+    }
+    
+    if(count == numofPipe && outputfile != NULL)
+    {
+
+        fd = open(outputfile,O_CREAT | O_WRONLY,0666);
+        dfd = dup(STDOUT_FILENO);
+        dup2(fd,STDOUT_FILENO);
+        close(fd);
+        printf("%s\n","In here" );
+    }
     
     for(int i=0;i<numofPath;i++){
 
@@ -310,30 +322,42 @@ void testtokenise(char *cmd, char **param){
     //     printf("%s ************",paramcpy[n]);
     // }
 }
-void tokenisePipe(char *cmddup){
-
+void tokenisePipe(char *cmd){
     char *init;
     int numofPipe = 0;
-    //char *tok;
+    char *final = NULL;
+    char *cmddup; 
     int i = 1;
+    //char *parsedtoken;
+    char *inputfile = NULL;
+    char *outputfile = NULL;
+    //char *outputfile = NULL;
+    cmddup = cmd;
+    if(strstr(cmd,"&")!=NULL){
+        cmddup = strsep(&cmd,"&");
+        bg = 1;
+    } 
+    
     init = strtok (cmddup,"|");
 
     if(init == NULL){
-        return;
+       return;
     }
+
     pipetoken[0] = init;
 
+    printf("%s\n",pipetoken[0]);
     while (init != NULL){
 
         pipetoken[i] = strtok (NULL, "|");
-        
+
         if(pipetoken[i] == NULL) 
         break;
+        printf("%s\n",pipetoken[i]);
         
         i++;
     }
     numofPipe = i-1;
-    //printf("%d\n",numofPipe);
     int pipefds[numofPipe*2];
 
     int outdup = dup(STDOUT_FILENO);
@@ -341,12 +365,64 @@ void tokenisePipe(char *cmddup){
     for(int i = 0; i<numofPipe; i+=2){
         pipe(pipefds+i);
     }
+    
     char *tokenisedpipe[MAX_PARAMS+1];
+    int status;
     //memset(tokenisedpipe, 0, sizeof(tokenisedpipe));
     for (int count = 0; count <= numofPipe; count++)
     {
+        
+        //---------------------------------------------------------------------
+        if(count == 0){
 
-        tokenise(pipetoken[count],tokenisedpipe);
+            if(strstr(pipetoken[count],"<")!=NULL){
+                
+                final = strsep(&pipetoken[count],"<");
+                
+                if(strstr(pipetoken[count], ">") != NULL && numofPipe == 0)
+                {
+                    inputfile = strsep(&pipetoken[count], ">");
+                    //check for spaces 
+                    outputfile = strsep(&pipetoken[count], ">");
+                    //check for spaces
+                }
+                else
+                {
+                    inputfile = strsep(&pipetoken[count], "<");
+                    //check for spaces
+                }
+
+            }
+
+            else if(strstr(pipetoken[count], ">") != NULL)
+            {
+                final = strsep(&pipetoken[count], ">");
+                outputfile = strsep(&pipetoken[count], ">");
+                //check for spaces
+            }
+            else{
+                final = pipetoken[count];
+            }
+
+            tokenise(final,tokenisedpipe);
+        }
+        
+        else if(count == numofPipe)
+        {
+            if(strstr(pipetoken[count], ">") != NULL)
+            {
+                final = strsep(&pipetoken[count], ">");
+                outputfile = strsep(&pipetoken[count], ">");
+                //check for spaces
+            }
+
+            tokenise(final,tokenisedpipe);
+        }
+        else{
+
+            tokenise(final,tokenisedpipe);
+            printf("%s\n", "here");
+        }
 
         pid_t pid = fork();
                 
@@ -358,6 +434,7 @@ void tokenisePipe(char *cmddup){
 
         else if(pid == 0)
         {
+            printf("Process:%dInfile:%dOutfile:%d\n",count,pipefds[(count-1)*2],pipefds[count*2+1]);
 
             if(count!=0){
                 dup2(pipefds[(count-1)*2],STDIN_FILENO);
@@ -365,26 +442,29 @@ void tokenisePipe(char *cmddup){
             
             dup2(outdup,1);
             
-            if(count != numofPipe){
+            if(count != numofPipe && count > 0){
                 dup2(pipefds[count*2+1],STDOUT_FILENO);
             }
             
-            if(count > 0)
-            {
-                close(pipefds[(count-1)*2]);
-            }
-            
-            execute(tokenisedpipe);
+            //printf("%s\n",inputfile);
+            execute(tokenisedpipe,inputfile,outputfile,count,numofPipe);
 
             //exit(0);
         }
         
         else
         {
-            wait(NULL);
+            if(count == numofPipe)
+            {
+                waitpid(pid, &status, WUNTRACED);
+            }
             if(count < numofPipe)
             {
                 close(pipefds[count*2+1]);
+            }
+            if(count > 0)
+            {
+                close(pipefds[(count - 1)*2]);
             }
         }
        
@@ -423,8 +503,10 @@ void tokeniseProcess(job *jobprocess, char *command, char * inputfile, char* out
     i=0;  
     char* token;
     char* token1;
-    char* infile = strdup(inputfile);
-    char* outfile = strdup(outputfile);
+    char* infile = NULL;
+
+    printf("%s\n",infile);
+    //char* outfile = strdup(outputfile);
     char* cmd;
 
     if(strstr(command,"&")!=NULL){
@@ -433,6 +515,7 @@ void tokeniseProcess(job *jobprocess, char *command, char * inputfile, char* out
     } 
     while ((token = strsep(&cmd,"|")) != NULL)
     {
+
         if(strcmp(token, "") != 0)
         {       
             process* pro = createnewprocess(jobprocess);
@@ -441,8 +524,10 @@ void tokeniseProcess(job *jobprocess, char *command, char * inputfile, char* out
 
             if(i == 0){
                 if(strstr(pro->completearg,"<")!=NULL){
-                    strsep(&token,pro->completearg,"<")
-
+                    
+                    token = strsep(&pro->completearg,"<");
+                    infile = strdup(strsep(&token,"<"));
+                    printf("%s\n",infile);
                 }
             }
         

@@ -17,7 +17,7 @@ int checkbuiltin(char *param);
 void redirection();
 int file_exist(char *filename);
 void revertfiledescriptor();
-void execute(char **param);
+void execute(char **tokenisedpipe, char* inputfile, char* outputfile, int count, int numofPipe);
 
 
 typedef struct process
@@ -46,7 +46,7 @@ typedef struct job
 job* createnewjob();
 
 void addjobtolist(job *newjob);
-void tokeniseProcess(job *jobprocess, char *cmd);
+void tokeniseProcess(job *jobprocess, char *command, char * inputfile, char* outputfile);
 void addprocesstolist(job* existingjob , process* newprocess);
 process* createnewprocess(job *jobprocess);
 
