@@ -56,6 +56,8 @@ int main(int argc, char** argv) {
     //to install your own.
     
     char *cmd;
+
+    int bg = 0;
     
     getPrompt("1","1");
 
@@ -65,6 +67,10 @@ int main(int argc, char** argv) {
 
         found = 0;
         enabledpipe = 0;
+        bg = 0;
+
+        char* inputfile;
+        char* outputfile;
 
         for(int i =0; i<MAX_PARAMS;i++){
         param[i] = NULL;
@@ -78,7 +84,7 @@ int main(int argc, char** argv) {
         //newjob->command = cmd;
 
        
-        //tokeniseProcess(newjob,cmddup);
+        //tokeniseProcess(newjob,cmddup,inputfile,outputfile);
 
         //printjobs();
 
@@ -327,7 +333,7 @@ void tokenisePipe(char *cmddup){
         i++;
     }
     numofPipe = i-1;
-   
+    //printf("%d\n",numofPipe);
     int pipefds[numofPipe*2];
 
     int outdup = dup(STDOUT_FILENO);
@@ -336,7 +342,7 @@ void tokenisePipe(char *cmddup){
         pipe(pipefds+i);
     }
     char *tokenisedpipe[MAX_PARAMS+1];
-    memset(tokenisedpipe, 0, sizeof(tokenisedpipe));
+    //memset(tokenisedpipe, 0, sizeof(tokenisedpipe));
     for (int count = 0; count <= numofPipe; count++)
     {
 
@@ -356,14 +362,21 @@ void tokenisePipe(char *cmddup){
             if(count!=0){
                 dup2(pipefds[(count-1)*2],STDIN_FILENO);
             }
+            
             dup2(outdup,1);
+            
             if(count != numofPipe){
                 dup2(pipefds[count*2+1],STDOUT_FILENO);
             }
-            close(pipefds[(count-1)*2]);
+            
+            if(count > 0)
+            {
+                close(pipefds[(count-1)*2]);
+            }
+            
             execute(tokenisedpipe);
 
-            exit(0);
+            //exit(0);
         }
         
         else
@@ -403,13 +416,21 @@ void tokenisePath(){
 
 }
 
-void tokeniseProcess(job *jobprocess, char *cmd){
+void tokeniseProcess(job *jobprocess, char *command, char * inputfile, char* outputfile){
 
     int i;
     int j;
     i=0;  
     char* token;
     char* token1;
+    char* infile = strdup(inputfile);
+    char* outfile = strdup(outputfile);
+    char* cmd;
+
+    if(strstr(command,"&")!=NULL){
+        cmd = strsep(&cmd,"&");
+        bg = 1;
+    } 
     while ((token = strsep(&cmd,"|")) != NULL)
     {
         if(strcmp(token, "") != 0)
@@ -417,6 +438,13 @@ void tokeniseProcess(job *jobprocess, char *cmd){
             process* pro = createnewprocess(jobprocess);
 
             pro->completearg = token;
+
+            if(i == 0){
+                if(strstr(pro->completearg,"<")!=NULL){
+                    strsep(&token,pro->completearg,"<")
+
+                }
+            }
         
             j=0;  
             
@@ -593,12 +621,10 @@ void getPrompt(char *user, char *host){
 
     if(strcmp(host,"1")==0){
         if(hostbold == 0){
-            //printf("%s\n","HERE 0" );
           strcat(prompt,colorcodes[hostcolor]);  
         }
         
         else{
-            //printf("%s\n","HERE 1" );
          strcat(prompt,colorBoldCodes[hostcolor]);   
         }
         
@@ -675,7 +701,7 @@ void chclr(){
 
     if(strcmp(param[1],"machine") ==0){
 
-        for(int i=0;i<8                        ;i++){
+        for(int i=0;i<8;i++){
             
             if(strcmp(param[2],promptcolor[i])==0){
                 hostcolor = i;
