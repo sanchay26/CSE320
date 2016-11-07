@@ -430,6 +430,11 @@ void tokenisePipe(char *cmd){
         if(pid == 0)
         {
             //printf("Process:%dInfile:%dOutfile:%d\n",count,pipefds[(count-1)*2],pipefds[count*2+1]);
+            // signal(SIGQUIT, SIG_IGN);
+            // signal(SIGTTOU, SIG_IGN);
+            // signal(SIGTTIN, SIG_IGN);
+            // signal(SIGTSTP, SIG_IGN);
+            // signal(SIGINT, SIG_IGN);
 
             if(count!=0){
                 dup2(pipefds[(count-1)*2],STDIN_FILENO);
@@ -568,13 +573,13 @@ void help(){
     
     else 
     {   
-        printf("%s\n","exit");
-        printf("%s\n","cd[-]");
-        printf("%s\n","chpmt");
-        printf("%s\n","chclr");
+        printf("%s\n","USAGE:");
+        printf("%s\n","cd[DIR|[-[.[..]");
+        printf("%s\n","chpmt[SETTING][TOGGLE]");
+        printf("%s\n","chclr[SETTING][COLOR][BOLD]");
         printf("%s\n","pwd");
         printf("%s\n","prt");
-        printf("%s\n","exit" );
+        printf("%s\n","exit");
         exit(0);
     }
 }
