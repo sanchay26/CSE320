@@ -205,7 +205,7 @@ void execute(char **tokenisedpipe, char* inputfile, char* outputfile, int count,
         //No command fouund 
         else {
 
-            printf("%s%s\n",param[0],": command not found");
+            fprintf(stderr,"%s%s\n",param[0],": command not found");
         }
     }
 
@@ -567,9 +567,14 @@ void help(){
     }
     
     else 
-    {
-        
-        printf("%s\n","I am help. Please update me" );
+    {   
+        printf("%s\n","exit");
+        printf("%s\n","cd[-]");
+        printf("%s\n","chpmt");
+        printf("%s\n","chclr");
+        printf("%s\n","pwd");
+        printf("%s\n","prt");
+        printf("%s\n","exit" );
         exit(0);
     }
 }
@@ -690,7 +695,7 @@ void getPrompt(char *user, char *host){
             strcat(prompt,colorcodes[usercolor]);
         }
         
-        else{
+        else if(userbold == 1){
             strcat(prompt,colorBoldCodes[usercolor]);
         } 
             
@@ -711,7 +716,7 @@ void getPrompt(char *user, char *host){
           strcat(prompt,colorcodes[hostcolor]);  
         }
         
-        else{
+        else if(hostbold == 1){
          strcat(prompt,colorBoldCodes[hostcolor]);   
         }
         
