@@ -241,14 +241,11 @@ void tokenise(char *cmddup, char **tokenisedpipe){
         return;
     }
     tokenisedpipe[0] = init;
-    
-    //numofParam++;
     while (init != NULL)
     {
         tokenisedpipe[i] = strtok (NULL, " ");
         if(tokenisedpipe[i] == NULL) 
         break;
-        
         i++;
     }
 }
