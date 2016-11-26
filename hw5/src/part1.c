@@ -14,7 +14,7 @@ int part1(){
 
     
     numfiles = nfiles();
-    pthread_t tid[numfiles];
+    //pthread_t tid[numfiles];
     int return_code;
     DIR *directory = opendir(DATA_DIR);
     struct dirent entry;
@@ -26,11 +26,10 @@ int part1(){
         {
             Stats *insertStat = createStat();
             insertStat->filename = strdup(entry.d_name);
-            pthread_create(&tid[i],NULL,map,(void*)insertStat);
+            //pthread_create(&tid[i],NULL,map,(void*)insertStat);
             
-            //map((void*)insertStat);
+            map((void*)insertStat);
             //pthread_setname_np(&tid[i], (const char*)qwe);
-            //stats = stats->next;
         }
     }
     
@@ -41,13 +40,16 @@ int part1(){
     
     closedir(directory);
    
-   
     for(int i=0; i<numfiles;i++)
-    {
-        pthread_join(tid[i],NULL);
+    {   
+        //printf("%s\n","HII");
+       // pthread_join(tid[i],NULL);
     }
-    //printstats();
+    
     reduce((void*)firststatshead);
+
+    
+
     
     printf("Number of files: %d\n",numfiles);
     /* DELETE THIS: THIS IS TO QUIET COMPILER ERRORS */
@@ -61,9 +63,11 @@ int part1(){
 }
 
 static void* map(void* v){
+
     Stats *web = (Stats*)v;
     char filepath[1024];
     strcpy(filepath,DATA_DIR);strcat(filepath,"/");strcat(filepath,web->filename);
+
     char line[100];
     char *linedup;
     char *timestamp;
@@ -71,8 +75,12 @@ static void* map(void* v){
     double totalduration = 0;
     char *cc;
     double numoflines = 0;
-    struct tm *info;
+    struct tm info;
     char year[80];
+    int intyear;
+    double distinctyears;
+    yearstruct *duplicate = NULL;
+    
 
     FILE *fp; 
     fp = fopen(filepath,"r");
@@ -80,11 +88,11 @@ static void* map(void* v){
     {
       perror("Error opening file");
     }
-    
+    //printf("%s\n", "did you come here");
     while( fgets (line, 100, fp)!=NULL ) 
     {
       numoflines++;
-      linedup = strdup(line);
+      linedup = line;
       
       //-----------------------------Dont change the order ----------------------
       timestamp = strsep (&linedup,",");    
@@ -92,24 +100,46 @@ static void* map(void* v){
       totalduration =totalduration + atoi(strsep (&linedup, ",")); 
       cc = strsep (&linedup,"\n");
       //-----------------------------Dont change the order ----------------------
+      
+      // Calculate year only if Query is "E"
+      if(current_query == E){
+        time_t rawtime = atoi(timestamp);
+        localtime_r(&rawtime,&info);
+        strftime(year,80,"%Y",&info);
+        intyear = atoi(year);
+        yearstruct *current = findyear(duplicate,intyear);
+        if(current == NULL){
+            pushyeartolist(&duplicate,createyear(intyear));
+        }
+        else{
+            current->count++;
+        }
+      }
 
-      time_t rawtime = atoi(timestamp);
-      info = localtime(&rawtime);
-      strftime(year,80,"%Y",info);
-      //printf("year%s\n",year);
     }
-    //printf("%s %s\n",ip,cc);
+
+
+    
+    if(current_query == E){
+        distinctyears = calculateDistintYears(duplicate);
+        //freeyears(duplicate);
+        web->avgusercountperyear = numoflines/distinctyears;
+    }
+    
+    fclose(fp);
+    
     werrorchut((void*)ip);
     werrorchut((void*)cc);
-    //printf("%s\n",web->filename);
+    werrorchut((void*)timestamp);
     web->avgduration = totalduration/numoflines;
+    //printf("%s\n","HEEYYYY");
     addStatToList(web);
-    
     return NULL;
 }
 
 static void* reduce(void* v){
 
+    printf("%s\n","HII");
     Stats *reduction = (Stats*)v;
     double maxAvgDuration = firststatshead->avgduration;
     double minAvgDuration = firststatshead->avgduration;
@@ -149,7 +179,7 @@ Stats* createStat(){
     Stats *newStat = malloc(sizeof(Stats));
     newStat->filename = NULL;
     newStat->avgduration = 0;
-    newStat->avgusercount = 0;
+    newStat->avgusercountperyear = 0;
     newStat->maxCC = NULL;
     newStat->maxCCcount = 0;
     newStat->next = NULL;
@@ -160,7 +190,6 @@ void addStatToList(Stats* add){
 
     if(firststatshead == NULL)
     {
-        
         firststatshead = add;
         statshead = firststatshead;
     }
@@ -179,10 +208,59 @@ void printstats(){
         
         printf("%s\n",first->filename);
         printf("%f\n",first->avgduration);
+        printf("%f\n",first->avgusercountperyear);
     }
     printf("%s\n","--------------------------------------------------------" );
 }
 
 void werrorchut(void *p){
 
+}
+
+yearstruct* createyear(int value){
+
+    yearstruct *newyearstruct = (yearstruct *)malloc(sizeof(yearstruct));
+    newyearstruct->year = value;
+    newyearstruct->count = 1;
+    return newyearstruct;
+}
+
+yearstruct* findyear(yearstruct *head, int value){
+    yearstruct *counter = head;
+
+    while (counter != NULL && counter->year != value){
+        counter = counter->next;
+    }
+    return counter;
+}
+
+void pushyeartolist(yearstruct **head, yearstruct *item){
+
+    item->next = *head;
+    *head = item;
+}
+
+double calculateDistintYears(yearstruct *head){
+    double i = 0;
+    while(head!= NULL){
+        i++;
+        head = head->next;
+    }
+    return i;
+}
+
+void freeyears(yearstruct *head){
+    yearstruct *current;
+    while((current = head)!= NULL){
+        head = head->next;
+        free(current);
+    }
+}
+
+void freestats(Stats *head){
+    Stats *current;
+    while((current = head)!= NULL){
+        head = head->next;
+        free(current);
+    }
 }
