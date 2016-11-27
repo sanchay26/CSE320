@@ -43,14 +43,13 @@ int part1(){
    
     for(int i=0; i<numfiles;i++)
     {   
-        //printf("%s\n","HII");
         pthread_join(tid[i],NULL);
     }
-    
+    //printstats();
     reduce((void*)firststatshead);
 
     
-
+    freestats(firststatshead);
     
     printf("Number of files: %d\n",numfiles);
     /* DELETE THIS: THIS IS TO QUIET COMPILER ERRORS */
@@ -81,6 +80,7 @@ static void* map(void* v){
     int intyear;
     double distinctyears;
     yearstruct *duplicate = NULL;
+    countrystruct *countryduplicate = NULL;
     
 
     FILE *fp; 
@@ -102,13 +102,14 @@ static void* map(void* v){
       cc = strsep (&linedup,"\n");
       //-----------------------------Dont change the order ----------------------
       
-      // Calculate year only if Query is "E"
-      if(current_query == E){
+      if(current_query == C || current_query == D )
+      {
         time_t rawtime = atoi(timestamp);
         localtime_r(&rawtime,&info);
         strftime(year,80,"%Y",&info);
         intyear = atoi(year);
         yearstruct *current = findyear(duplicate,intyear);
+        
         if(current == NULL){
             pushyeartolist(&duplicate,createyear(intyear));
         }
@@ -117,35 +118,52 @@ static void* map(void* v){
         }
       }
 
+      if(current_query == E){
+        
+        countrystruct *current1 = findcountry(countryduplicate,cc);
+
+        if(current1 == NULL){
+            pushcountrytolist(&countryduplicate,createcountry(cc));
+        }
+        else{
+            current1->count++;
+        }
+
+      }
+
     }
 
-
-    
-    if(current_query == E){
+    if(current_query == C || current_query == D){
         distinctyears = calculateDistintYears(duplicate);
-
         freeyears(duplicate);
         web->avgusercountperyear = numoflines/distinctyears;
-        printf("%f\n",web->avgusercountperyear);
+    }
+
+    if(current_query == E){
+        countrystruct* maxCC = findmaxccodes(countryduplicate);
+        strcpy(web->maxCC,maxCC->ccode);
+        web->maxCCcount = maxCC->count;
     }
     
     fclose(fp);
     
     werrorchut((void*)ip);
-    werrorchut((void*)cc);
-    werrorchut((void*)timestamp);
     web->avgduration = totalduration/numoflines;
-    //printf("%s\n","HEEYYYY");
     addStatToList(web);
     return NULL;
 }
 
 static void* reduce(void* v){
 
-    printf("%s\n","HII");
     Stats *reduction = (Stats*)v;
     double maxAvgDuration = firststatshead->avgduration;
     double minAvgDuration = firststatshead->avgduration;
+    double maxAvgUserCount = firststatshead->avgusercountperyear;
+    double minAvgUserCount = firststatshead->avgusercountperyear;
+    int maxCCcount = firststatshead->maxCCcount;
+    char cc[2] = "";
+
+
     for(reduction = firststatshead; reduction!=NULL;reduction= reduction->next){
 
         if(reduction->avgduration > maxAvgDuration){
@@ -155,9 +173,29 @@ static void* reduce(void* v){
             minAvgDuration = reduction->avgduration;
         }
 
+        if(current_query == C || current_query == D){
+
+            if(reduction->avgusercountperyear > maxAvgUserCount){
+                maxAvgUserCount = reduction->avgusercountperyear;
+            }
+            else if(reduction->avgusercountperyear < minAvgUserCount){
+                minAvgUserCount = reduction->avgusercountperyear;
+            }
+        }
+        if(current_query == E){
+            if(reduction->maxCCcount > maxCCcount){
+                maxCCcount = reduction->maxCCcount;
+                strcpy(cc,reduction->maxCC);
+            }
+        }
     }
-    printf("maxAvgDuration:%f\n",maxAvgDuration);
-    printf("minAvgDuration:%f\n",minAvgDuration);
+
+    printf("maxAvgDuration: %f\n",maxAvgDuration);
+    printf("minAvgDuration: %f\n",minAvgDuration);
+    printf("maxAvgUserCount: %f\n",maxAvgUserCount);
+    printf("minAvgUserCount: %f\n",minAvgUserCount);
+    printf("maxCCcount: %d\n",maxCCcount);
+    printf("maxCCcode: %s\n",cc);
 
     return NULL;
 }
@@ -183,7 +221,8 @@ Stats* createStat(){
     newStat->filename = NULL;
     newStat->avgduration = 0;
     newStat->avgusercountperyear = 0;
-    newStat->maxCC = NULL;
+    //newStat->maxCC = NULL;
+    strcpy(newStat->maxCC,"");
     newStat->maxCCcount = 0;
     newStat->next = NULL;
 return newStat;
@@ -206,7 +245,6 @@ void addStatToList(Stats* add){
 void printstats(){
     printf("%s\n","--------------------------------------------------------" );
     Stats* first;
-    //printf("%s",firststatshead->filename);
     for(first = firststatshead; first!=NULL;first=first->next){
         
         printf("%s\n",first->filename);
@@ -266,4 +304,46 @@ void freestats(Stats *head){
         head = head->next;
         free(current);
     }
+}
+
+countrystruct* createcountry(char *value){
+
+    countrystruct *newcountrystruct = (countrystruct *)malloc(sizeof(countrystruct));
+    strcpy(newcountrystruct->ccode,value);
+    newcountrystruct->count = 1;
+    return newcountrystruct;
+}
+
+
+countrystruct* findcountry(countrystruct *head, char* value){
+    countrystruct *counter = head;
+
+    while (counter != NULL && strcmp(counter->ccode,value)!=0){
+
+        counter = counter->next;
+    }
+    return counter;
+}
+
+void pushcountrytolist(countrystruct **head, countrystruct *item){
+    item->next = *head;
+    *head = item;
+}
+
+countrystruct* findmaxccodes(countrystruct *head){
+
+    countrystruct *maxCC = malloc(sizeof(countrystruct));
+    maxCC->count = head->count;
+    
+    while(head!= NULL){
+        
+        if(maxCC->count < head->count){
+            maxCC->count = head->count;
+            strcpy(maxCC->ccode,head->ccode);
+            //maxCC->ccode = head->ccode;
+        }
+        
+        head = head->next;
+    }
+    return maxCC;
 }

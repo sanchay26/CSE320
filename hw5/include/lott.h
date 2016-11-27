@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define DATA_DIR "mock"
+#define DATA_DIR "data"
 
 #define HELP do{ \
                 printf("%s\n", "Lord of the Threads");\
@@ -55,8 +55,8 @@ int part5(size_t);
 struct Stats {
   double avgduration;
   double avgusercountperyear;             
-  char* maxCC;  
-  double maxCCcount;          
+  char maxCC[2];  
+  int maxCCcount;          
   char* filename;
   struct Stats* next;
 };
@@ -69,6 +69,14 @@ struct yearstruct
     struct yearstruct *next;
 };
 typedef struct yearstruct yearstruct;
+
+struct countrystruct
+{
+    int count;
+    char ccode[2];
+    struct countrystruct *next;
+};
+typedef struct countrystruct countrystruct;
 
 int nfiles();
 
@@ -92,5 +100,13 @@ Stats* createStat();
 yearstruct* createyear(int value);
 
 yearstruct* findyear(yearstruct *head, int value);
+
+countrystruct* createcountry(char *value);
+
+countrystruct* findcountry(countrystruct *head, char* value);
+
+void pushcountrytolist(countrystruct **head, countrystruct *item);
+
+countrystruct* findmaxccodes(countrystruct *head);
 
 #endif /* LOTT_H */
