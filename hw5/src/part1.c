@@ -14,21 +14,22 @@ int part1(){
 
     
     numfiles = nfiles();
-    //pthread_t tid[numfiles];
+    pthread_t tid[numfiles];
     int return_code;
     DIR *directory = opendir(DATA_DIR);
     struct dirent entry;
     struct dirent *result;
-    int i; 
-    for (return_code = readdir_r(directory, &entry, &result),i=0;result != NULL && return_code == 0;return_code = readdir_r(directory, &entry, &result),i++)
+    int i=0; 
+    for (return_code = readdir_r(directory, &entry, &result);result != NULL && return_code == 0;return_code = readdir_r(directory, &entry, &result))
     {
        if(entry.d_type == DT_REG)
         {
             Stats *insertStat = createStat();
             insertStat->filename = strdup(entry.d_name);
-            //pthread_create(&tid[i],NULL,map,(void*)insertStat);
+            pthread_create(&tid[i],NULL,map,(void*)insertStat);
+            i++;
             
-            map((void*)insertStat);
+            //map((void*)insertStat);
             //pthread_setname_np(&tid[i], (const char*)qwe);
         }
     }
@@ -43,7 +44,7 @@ int part1(){
     for(int i=0; i<numfiles;i++)
     {   
         //printf("%s\n","HII");
-       // pthread_join(tid[i],NULL);
+        pthread_join(tid[i],NULL);
     }
     
     reduce((void*)firststatshead);
@@ -122,8 +123,10 @@ static void* map(void* v){
     
     if(current_query == E){
         distinctyears = calculateDistintYears(duplicate);
-        //freeyears(duplicate);
+
+        freeyears(duplicate);
         web->avgusercountperyear = numoflines/distinctyears;
+        printf("%f\n",web->avgusercountperyear);
     }
     
     fclose(fp);
