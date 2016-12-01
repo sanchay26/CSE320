@@ -1,15 +1,13 @@
 #include "lott.h"
-
 #include <sys/types.h>
-#include <dirent.h>
+
 
 
 static void* map(void*);
 static void* reduce(void*);
 
 int numfiles = 0;
-Stats* statshead = NULL;
-Stats* firststatshead = NULL;
+
 int part1(){
 
     
@@ -28,7 +26,6 @@ int part1(){
             insertStat->filename = strdup(entry.d_name);
             pthread_create(&tid[i],NULL,map,(void*)insertStat);
             i++;
-            
             //map((void*)insertStat);
             //pthread_setname_np(&tid[i], (const char*)qwe);
         }

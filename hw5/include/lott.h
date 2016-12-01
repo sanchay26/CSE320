@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <dirent.h>
 
 #define DATA_DIR "data"
 
@@ -62,6 +63,10 @@ struct Stats {
 };
 typedef struct Stats Stats;
 
+
+Stats* statshead;
+Stats* firststatshead;
+
 struct yearstruct
 {
     int count;
@@ -108,5 +113,7 @@ countrystruct* findcountry(countrystruct *head, char* value);
 void pushcountrytolist(countrystruct **head, countrystruct *item);
 
 countrystruct* findmaxccodes(countrystruct *head);
+
+void* helpmap(void* dir);
 
 #endif /* LOTT_H */
