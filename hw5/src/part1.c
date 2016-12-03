@@ -42,7 +42,8 @@ int part1(){
     {   
         pthread_join(tid[i],NULL);
     }
-    //printstats();
+
+    
     reduce((void*)firststatshead);
 
     
@@ -369,6 +370,13 @@ countrystruct* findmaxccodes(countrystruct *head){
             maxCC->count = head->count;
             strcpy(maxCC->ccode,head->ccode);
             //maxCC->ccode = head->ccode;
+        }
+        if(maxCC->count == head->count){
+            
+            if(strcmp(maxCC->ccode,head->ccode) > 0){
+                maxCC->count = head->count;
+                strcpy(maxCC->ccode,head->ccode);
+            }
         }
         
         head = head->next;
