@@ -161,6 +161,7 @@ static void* reduce(void* v){
     double minAvgUserCount = firststatshead->avgusercountperyear;
     int maxCCcount = firststatshead->maxCCcount;
     char cc[2] = "";
+    countrystruct *head = NULL;
 
 
     for(reduction = firststatshead; reduction!=NULL;reduction= reduction->next){
@@ -182,13 +183,25 @@ static void* reduce(void* v){
             }
         }
         if(current_query == E){
-            if(reduction->maxCCcount > maxCCcount){
-                maxCCcount = reduction->maxCCcount;
-                strcpy(cc,reduction->maxCC);
+            
+            countrystruct *current2 = findcountry(head,reduction->maxCC);
+
+            if(current2 == NULL){
+                pushcountrytolist(&head,createcountryforreduce(reduction->maxCC,reduction->maxCCcount));
+            }
+            else{
+                current2->count = current2->count + reduction->maxCCcount;
             }
         }
     }
-
+    printf("%s\n","reduce" );
+    while(head!=NULL){
+        if(head->count > maxCCcount){
+            maxCCcount = head->count;
+            strcpy(cc,head->ccode);
+        }
+        head = head->next;
+    }
     printf("maxAvgDuration: %f\n",maxAvgDuration);
     printf("minAvgDuration: %f\n",minAvgDuration);
     printf("maxAvgUserCount: %f\n",maxAvgUserCount);
@@ -321,6 +334,14 @@ countrystruct* createcountry(char *value){
     return newcountrystruct;
 }
 
+countrystruct* createcountryforreduce(char *value, int count){
+
+    countrystruct *newcountrystruct = (countrystruct *)malloc(sizeof(countrystruct));
+    strcpy(newcountrystruct->ccode,value);
+    newcountrystruct->count = count;
+    return newcountrystruct;
+}
+
 
 countrystruct* findcountry(countrystruct *head, char* value){
     countrystruct *counter = head;
@@ -341,7 +362,7 @@ countrystruct* findmaxccodes(countrystruct *head){
 
     countrystruct *maxCC = malloc(sizeof(countrystruct));
     maxCC->count = head->count;
-    
+    strcpy(maxCC->ccode,head->ccode);
     while(head!= NULL){
         
         if(maxCC->count < head->count){

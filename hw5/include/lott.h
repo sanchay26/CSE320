@@ -16,7 +16,7 @@
 #include <fcntl.h>
 #include <semaphore.h>
 
-#define DATA_DIR "mock"
+#define DATA_DIR "data"
 
 
 #define HELP do{ \
@@ -123,6 +123,8 @@ countrystruct* findcountry(countrystruct *head, char* value);
 void pushcountrytolist(countrystruct **head, countrystruct *item);
 
 countrystruct* findmaxccodes(countrystruct *head);
+
+countrystruct* createcountryforreduce(char *value, int count);
 
 void* helpmap3(void* dir);
 
