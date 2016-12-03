@@ -1,6 +1,11 @@
 #ifndef LOTT_H
 #define LOTT_H
 
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+ 
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,8 +13,11 @@
 #include <errno.h>
 #include <string.h>
 #include <dirent.h>
+#include <fcntl.h>
+#include <semaphore.h>
 
-#define DATA_DIR "data"
+#define DATA_DIR "mock"
+
 
 #define HELP do{ \
                 printf("%s\n", "Lord of the Threads");\
@@ -95,6 +103,8 @@ void pushyeartolist(yearstruct **head, yearstruct *item);
 
 void freeyears(yearstruct *head);
 
+void freecountry(countrystruct *head);
+
 void freestats(Stats *head);
 
 double calculateDistintYears(yearstruct *head);
@@ -113,6 +123,8 @@ countrystruct* findcountry(countrystruct *head, char* value);
 void pushcountrytolist(countrystruct **head, countrystruct *item);
 
 countrystruct* findmaxccodes(countrystruct *head);
+
+void* helpmap3(void* dir);
 
 void* helpmap(void* dir);
 

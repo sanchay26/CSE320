@@ -25,9 +25,9 @@ int part1(){
             Stats *insertStat = createStat();
             insertStat->filename = strdup(entry.d_name);
             pthread_create(&tid[i],NULL,map,(void*)insertStat);
-            i++;
             //map((void*)insertStat);
-            //pthread_setname_np(&tid[i], (const char*)qwe);
+            //pthread_setname_np(tid[i],"LOLOOOOOOOOOOOOOOOOOL");
+            i++;
         }
     }
     
@@ -140,6 +140,8 @@ static void* map(void* v){
         countrystruct* maxCC = findmaxccodes(countryduplicate);
         strcpy(web->maxCC,maxCC->ccode);
         web->maxCCcount = maxCC->count;
+        freecountry(countryduplicate);
+        free(maxCC);
     }
     
     fclose(fp);
@@ -289,6 +291,14 @@ double calculateDistintYears(yearstruct *head){
 
 void freeyears(yearstruct *head){
     yearstruct *current;
+    while((current = head)!= NULL){
+        head = head->next;
+        free(current);
+    }
+}
+
+void freecountry(countrystruct *head){
+    countrystruct *current;
     while((current = head)!= NULL){
         head = head->next;
         free(current);

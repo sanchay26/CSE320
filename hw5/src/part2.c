@@ -14,10 +14,14 @@ int part2(size_t nthreads) {
         pthread_create(&tid[i],NULL,helpmap,(void*)directory);
     }
 
+
+
     for(int i=0; i<nthreads;i++)
     {   
         pthread_join(tid[i],NULL);
     }
+
+    closedir(directory);
     
     reduce((void*)firststatshead);
 
@@ -109,6 +113,8 @@ static void* map(void* v){
         countrystruct* maxCC = findmaxccodes(countryduplicate);
         strcpy(web->maxCC,maxCC->ccode);
         web->maxCCcount = maxCC->count;
+        freecountry(countryduplicate);
+        free(maxCC);
     }
     
     fclose(fp);
@@ -185,5 +191,4 @@ void* helpmap(void* dir){
     }
 
     return NULL;
-
 }
