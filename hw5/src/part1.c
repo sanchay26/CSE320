@@ -43,7 +43,7 @@ int part1(){
         pthread_join(tid[i],NULL);
     }
 
-    
+
     reduce((void*)firststatshead);
 
     
@@ -148,6 +148,7 @@ static void* map(void* v){
     fclose(fp);
     
     werrorchut((void*)ip);
+    printf("%s\n",web->filename);
     web->avgduration = totalduration/numoflines;
     addStatToList(web);
     return NULL;
@@ -195,7 +196,6 @@ static void* reduce(void* v){
             }
         }
     }
-    printf("%s\n","reduce" );
     while(head!=NULL){
         if(head->count > maxCCcount){
             maxCCcount = head->count;

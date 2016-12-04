@@ -14,8 +14,6 @@ int part2(size_t nthreads) {
         pthread_create(&tid[i],NULL,helpmap,(void*)directory);
     }
 
-
-
     for(int i=0; i<nthreads;i++)
     {   
         pthread_join(tid[i],NULL);
@@ -133,40 +131,88 @@ static void* reduce(void* v){
     double minAvgUserCount = firststatshead->avgusercountperyear;
     int maxCCcount = firststatshead->maxCCcount;
     char cc[2] = "";
+    countrystruct *head = NULL;
+    char *resultmaxfilename = firststatshead->filename;
+    char *resultminfilename = firststatshead->filename;
 
 
     for(reduction = firststatshead; reduction!=NULL;reduction= reduction->next){
 
-        if(reduction->avgduration > maxAvgDuration){
-            maxAvgDuration = reduction->avgduration;
-        }
-        else if(reduction->avgduration < minAvgDuration){
-            minAvgDuration = reduction->avgduration;
+    
+        if(current_query == A || current_query == B){
+            
+            if(reduction->avgduration > maxAvgDuration){
+                maxAvgDuration = reduction->avgduration;
+                resultmaxfilename = strdup(reduction->filename);
+            }
+            else if(reduction->avgduration < minAvgDuration){
+                minAvgDuration = reduction->avgduration;
+                resultminfilename = strdup(reduction->filename);
+            }  
         }
 
         if(current_query == C || current_query == D){
 
             if(reduction->avgusercountperyear > maxAvgUserCount){
+                printf("%s\n","HEYY");
                 maxAvgUserCount = reduction->avgusercountperyear;
+                resultmaxfilename = strdup(reduction->filename);
             }
             else if(reduction->avgusercountperyear < minAvgUserCount){
+                printf("%s\n","HEYY");
                 minAvgUserCount = reduction->avgusercountperyear;
+                resultminfilename = strdup(reduction->filename);
             }
         }
+        
         if(current_query == E){
-            if(reduction->maxCCcount > maxCCcount){
-                maxCCcount = reduction->maxCCcount;
-                strcpy(cc,reduction->maxCC);
+            
+            countrystruct *current2 = findcountry(head,reduction->maxCC);
+
+            if(current2 == NULL){
+                pushcountrytolist(&head,createcountryforreduce(reduction->maxCC,reduction->maxCCcount));
+            }
+            else{
+                current2->count = current2->count + reduction->maxCCcount;
             }
         }
     }
+    
+    if(current_query == A){
 
-    printf("maxAvgDuration: %f\n",maxAvgDuration);
-    printf("minAvgDuration: %f\n",minAvgDuration);
-    printf("maxAvgUserCount: %f\n",maxAvgUserCount);
-    printf("minAvgUserCount: %f\n",minAvgUserCount);
-    printf("maxCCcount: %d\n",maxCCcount);
-    printf("maxCCcode: %s\n",cc);
+        printf("%f\n",maxAvgDuration);
+        printf("%s\n",resultmaxfilename );
+    }
+
+    if(current_query == B){
+
+        printf("%f\n",minAvgDuration);
+        printf("%s\n",resultminfilename);
+    }
+
+    if(current_query == C){
+
+        printf("%f\n",maxAvgUserCount);
+        printf("%s\n",resultmaxfilename);
+    }
+
+    if(current_query == D){
+
+        printf("minAvgUserCount: %f\n",minAvgUserCount);
+        printf("%s\n",resultminfilename);
+    }
+    
+    if(current_query == E){
+       while(head!=NULL){
+            if(head->count > maxCCcount){
+                maxCCcount = head->count;
+                strcpy(cc,head->ccode);
+            }
+            head = head->next;
+        } 
+        printf("maxCCcount: %d\n",maxCCcount);
+        printf("maxCCcode: %s\n",cc);
+    }
 
     return NULL;
 }
