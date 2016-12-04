@@ -15,6 +15,9 @@ double maxUserCount = -1;
 double minUserCount = 10000;
 char *resultmaxfilename;
 char *resultminfilename;
+char finalcc[2];
+int count = 0;
+countrystruct *head = NULL;
 
 static void cleanup_handler(void *arg)
 {
@@ -84,11 +87,19 @@ int part3(size_t nthreads){
         printf("%s\n",resultminfilename);  
     }
 
-
-
-    
-
-    return 0;
+    if(current_query == E){
+        
+        while(head!=NULL){
+            if(head->count > count){
+                count = head->count;
+                strcpy(finalcc,head->ccode);
+            }
+            head = head->next;
+        }
+        printf("%d\n",count);
+        printf("%s\n",finalcc);
+    }
+return 0;
 }
 
 static void* map(void* v){
@@ -109,6 +120,7 @@ static void* map(void* v){
     int intyear;
     double distinctyears;
     yearstruct *duplicate = NULL;
+    countrystruct *countryduplicate = NULL;
 
     FILE *fp; 
     fp = fopen(filepath,"r");
@@ -118,8 +130,7 @@ static void* map(void* v){
     }
 
 
-    while( fgets (line, 100, fp)!=NULL ) 
-    {
+    while( fgets (line, 100, fp)!=NULL ) {
       
       numoflines++;
       linedup = line;
@@ -131,25 +142,38 @@ static void* map(void* v){
       cc = strsep (&linedup,"\n");
       //-----------------------------Dont change the order ----------------------
 
-      if(current_query == C || current_query == D ){
-        time_t rawtime = atoi(timestamp);
-        localtime_r(&rawtime,&info);
-        strftime(year,80,"%Y",&info);
-        intyear = atoi(year);
-        yearstruct *current = findyear(duplicate,intyear);
-        
-        if(current == NULL){
-            pushyeartolist(&duplicate,createyear(intyear));
+        if(current_query == C || current_query == D ){
+            time_t rawtime = atoi(timestamp);
+            localtime_r(&rawtime,&info);
+            strftime(year,80,"%Y",&info);
+            intyear = atoi(year);
+            yearstruct *current = findyear(duplicate,intyear);
+            
+            if(current == NULL){
+                pushyeartolist(&duplicate,createyear(intyear));
+            }
+            else{
+                current->count++;
+            }
         }
-        else{
-            current->count++;
+
+        if(current_query == E){
+        
+            countrystruct *current1 = findcountry(countryduplicate,cc);
+
+            if(current1 == NULL){
+                pushcountrytolist(&countryduplicate,createcountry(cc));
+            }
+            else{
+                current1->count++;
+            }
         }
     }
 
-    }
+    fclose(fp);
+    
     werrorchut((void*)ip);
-    werrorchut((void*)timestamp);
-    werrorchut((void*)cc);
+    
 
     if(current_query == A || current_query == B){
 
@@ -178,7 +202,19 @@ static void* map(void* v){
         pthread_mutex_unlock(&lock_mutex);
     }
 
-    
+    if(current_query == E){
+        countrystruct* maxCC = findmaxccodes(countryduplicate);
+        char tmp[30];
+        sprintf(tmp,"%d",maxCC->count);
+        pthread_mutex_lock(&lock_mutex);
+        write(fd,tmp,strlen(tmp));
+        write(fd,",",1);
+        write(fd,maxCC->ccode,strlen(maxCC->ccode));
+        write(fd,"\n",1);
+        pthread_mutex_unlock(&lock_mutex);
+        freecountry(countryduplicate);
+        free(maxCC);
+    }
 
     return NULL;
 }
@@ -192,7 +228,10 @@ static void* reduce(void* v){
         double averageduration;
         double avgusercountperyear;
         char *filename;
-        //char *maxAvgDurationfilename = "";
+        //int maxCCcount;
+        char *cc;
+        int ccount;
+        
         char line[100];
         char *linedup;
 
@@ -227,6 +266,19 @@ static void* reduce(void* v){
                     minUserCount = avgusercountperyear;
                     resultminfilename = strdup(filename);
                     
+                }
+            }
+            if(current_query == E){
+
+                ccount = atoi(strsep (&linedup,","));   
+                cc = strsep(&linedup,"\n"); 
+                countrystruct *current2 = findcountry(head,cc);
+
+                if(current2 == NULL){
+                    pushcountrytolist(&head,createcountryforreduce(cc,ccount));
+                }
+                else{
+                    current2->count = current2->count + ccount;
                 }
             }
         }

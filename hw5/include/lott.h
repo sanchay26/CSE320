@@ -16,7 +16,7 @@
 #include <fcntl.h>
 #include <semaphore.h>
 
-#define DATA_DIR "mock"
+#define DATA_DIR "data"
 
 
 #define HELP do{ \
