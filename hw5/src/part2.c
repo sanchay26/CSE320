@@ -7,10 +7,14 @@ int part2(size_t nthreads) {
 
     pthread_t tid[nthreads];
     DIR *directory = opendir(DATA_DIR);
-
+    char index[30] = "";
     for(int i=0;i<nthreads;i++){
 
         pthread_create(&tid[i],NULL,helpmap,(void*)directory);
+        char name[20] = "map";
+        sprintf(index,"%d",i);
+        strcat(name,index);
+        pthread_setname_np(tid[i],name);
     }
 
     for(int i=0; i<nthreads;i++)

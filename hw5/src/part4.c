@@ -170,12 +170,8 @@ static void* reduce(void* v){
 
     pthread_cleanup_push(cleanup_handler,NULL);
     Stats *reduction = (Stats*)v;
-    //int maxCCcount = -1;
-    //char cc[2] = "";
     countrystruct *head = NULL;
-    //char *resultmaxfilename = NULL;
-    //char *resultminfilename = NULL;
-
+    
     while(1){
         
         pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);

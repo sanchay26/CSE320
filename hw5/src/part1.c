@@ -17,7 +17,8 @@ int part1(){
     DIR *directory = opendir(DATA_DIR);
     struct dirent entry;
     struct dirent *result;
-    int i=0; 
+    int i=0;
+    char index[30]="";
     for (return_code = readdir_r(directory, &entry, &result);result != NULL && return_code == 0;return_code = readdir_r(directory, &entry, &result))
     {
        if(entry.d_type == DT_REG)
@@ -25,8 +26,10 @@ int part1(){
             Stats *insertStat = createStat();
             insertStat->filename = strdup(entry.d_name);
             pthread_create(&tid[i],NULL,map,(void*)insertStat);
-            //map((void*)insertStat);
-            //pthread_setname_np(tid[i],"LOLOOOOOOOOOOOOOOOOOL");
+            char name[20] = "map";
+            sprintf(index,"%d",i);
+            strcat(name,index);
+            pthread_setname_np(tid[i],name);
             i++;
         }
     }
