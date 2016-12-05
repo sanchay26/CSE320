@@ -57,6 +57,32 @@ int part1(){
         "Query: %s\n",
         PART_STRINGS[current_part], QUERY_STRINGS[current_query]);
 
+    if(current_query == A){
+        printf("%f\n",final_max_avg_duration);
+        printf("%s\n",final_max_filename);  
+    }
+
+    if(current_query == B){
+        printf("%f\n",final_min_avg_duration);
+        printf("%s\n",final_min_filename);  
+    }
+
+    if(current_query == C){
+        printf("%f\n",final_max_user_count);
+        printf("%s\n",final_max_filename);  
+    }
+
+    if(current_query == D){
+        printf("%f\n",final_min_user_count);
+        printf("%s\n",final_min_filename);  
+    }
+
+    if(current_query == E){
+        printf("%d\n",final_max_ccount);
+        printf("%s\n",final_max_ccode);
+    }
+
+
     return 0;
 }
 
@@ -148,7 +174,7 @@ static void* map(void* v){
     fclose(fp);
     
     werrorchut((void*)ip);
-    printf("%s\n",web->filename);
+
     web->avgduration = totalduration/numoflines;
     addStatToList(web);
     return NULL;
@@ -164,25 +190,63 @@ static void* reduce(void* v){
     int maxCCcount = firststatshead->maxCCcount;
     char cc[2] = "";
     countrystruct *head = NULL;
+    char *resultmaxfilename = firststatshead->filename;
+    char *resultminfilename = firststatshead->filename;
 
 
     for(reduction = firststatshead; reduction!=NULL;reduction= reduction->next){
 
-        if(reduction->avgduration > maxAvgDuration){
-            maxAvgDuration = reduction->avgduration;
-        }
-        else if(reduction->avgduration < minAvgDuration){
-            minAvgDuration = reduction->avgduration;
+        
+        if(current_query == A || current_query == B){
+
+
+            if(reduction->avgduration > maxAvgDuration){
+                maxAvgDuration = reduction->avgduration;
+                resultmaxfilename = reduction->filename;
+            }
+            else if(reduction->avgduration == maxAvgDuration){
+                if(strcmp(resultmaxfilename,reduction->filename) > 0){
+                    maxAvgDuration = reduction->avgduration;
+                    resultmaxfilename = reduction->filename;
+                }
+            } 
+
+            if(reduction->avgduration < minAvgDuration){
+                minAvgDuration = reduction->avgduration;
+                resultminfilename = reduction->filename;
+            }
+            else if(reduction->avgduration == minAvgDuration){
+                if(strcmp(resultminfilename,reduction->filename) > 0){
+                    minAvgDuration = reduction->avgduration;
+                    resultminfilename = reduction->filename;
+                }
+            }
         }
 
         if(current_query == C || current_query == D){
 
             if(reduction->avgusercountperyear > maxAvgUserCount){
                 maxAvgUserCount = reduction->avgusercountperyear;
+                resultmaxfilename = reduction->filename;
             }
-            else if(reduction->avgusercountperyear < minAvgUserCount){
+            else if(reduction->avgusercountperyear == maxAvgUserCount){
+                if(strcmp(resultmaxfilename,reduction->filename) > 0){
+                    maxAvgUserCount = reduction->avgusercountperyear;
+                    resultmaxfilename = reduction->filename;
+                }
+            } 
+            
+            if(reduction->avgusercountperyear < minAvgUserCount){
                 minAvgUserCount = reduction->avgusercountperyear;
+                resultminfilename = reduction->filename;
             }
+            else if(reduction->avgusercountperyear == minAvgUserCount){
+                if(strcmp(resultminfilename,reduction->filename) > 0){
+                    maxAvgUserCount = reduction->avgusercountperyear;
+                    resultminfilename = reduction->filename;
+                }
+            }
+
         }
         if(current_query == E){
             
@@ -203,12 +267,22 @@ static void* reduce(void* v){
         }
         head = head->next;
     }
-    printf("maxAvgDuration: %f\n",maxAvgDuration);
-    printf("minAvgDuration: %f\n",minAvgDuration);
-    printf("maxAvgUserCount: %f\n",maxAvgUserCount);
-    printf("minAvgUserCount: %f\n",minAvgUserCount);
-    printf("maxCCcount: %d\n",maxCCcount);
-    printf("maxCCcode: %s\n",cc);
+
+    final_max_avg_duration = maxAvgDuration;
+
+    final_min_avg_duration = minAvgDuration;
+
+    final_max_user_count = maxAvgUserCount;
+
+    final_min_user_count = minAvgUserCount;
+
+    final_max_filename = resultmaxfilename;
+
+    final_min_filename = resultminfilename;
+
+    final_max_ccount = maxCCcount;
+
+    strcpy(final_max_ccode,cc);
 
     return NULL;
 }

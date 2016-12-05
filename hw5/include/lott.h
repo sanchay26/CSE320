@@ -128,6 +128,24 @@ countrystruct* createcountryforreduce(char *value, int count);
 
 void* helpmap3(void* dir);
 
+void* helpmap4(void* dir);
+
 void* helpmap(void* dir);
+
+double final_max_avg_duration;
+
+double final_min_avg_duration;
+
+double final_max_user_count;
+
+double final_min_user_count;
+
+int final_max_ccount;
+
+char final_max_ccode[2];
+
+char* final_max_filename;
+
+char* final_min_filename;
 
 #endif /* LOTT_H */
