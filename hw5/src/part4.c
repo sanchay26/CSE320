@@ -46,10 +46,30 @@ int part4(size_t nthreads){
         PART_STRINGS[current_part], QUERY_STRINGS[current_query]);
 
     //printf("%f\n",maxAvgDuration);
-    printf("maxdur%f\n",final_max_avg_duration);
-    printf("mindur%f\n",final_min_avg_duration);
-    printf("minuser%f\n",final_max_user_count);
-    printf("maxuser%f\n",final_min_user_count);
+    if(current_query == A){
+        printf("%f\n",final_max_avg_duration);
+        printf("%s\n",final_max_filename);  
+    }
+
+    if(current_query == B){
+        printf("%f\n",final_min_avg_duration);
+        printf("%s\n",final_min_filename);  
+    }
+
+    if(current_query == C){
+        printf("%f\n",final_max_user_count);
+        printf("%s\n",final_max_filename);  
+    }
+
+    if(current_query == D){
+        printf("%f\n",final_min_user_count);
+        printf("%s\n",final_min_filename);  
+    }
+
+    if(current_query == E){
+        printf("%d\n",final_max_ccount);
+        printf("%s\n",final_max_ccode);
+    }
 
     return 0;
 }
@@ -141,7 +161,6 @@ static void* map(void* v){
     
 
     web->avgduration = totalduration/numoflines;
-    printf("%f\n",web->avgduration);
     addStatToList(web);
 
     return NULL;
@@ -151,8 +170,8 @@ static void* reduce(void* v){
 
     pthread_cleanup_push(cleanup_handler,NULL);
     Stats *reduction = (Stats*)v;
-    int maxCCcount = -1;
-    char cc[2] = "";
+    //int maxCCcount = -1;
+    //char cc[2] = "";
     countrystruct *head = NULL;
     //char *resultmaxfilename = NULL;
     //char *resultminfilename = NULL;
@@ -169,6 +188,8 @@ static void* reduce(void* v){
                 final_min_avg_duration = firststatshead->avgduration;
                 final_max_user_count = firststatshead->avgusercountperyear;
                 final_min_user_count = firststatshead->avgusercountperyear;
+                final_max_filename = firststatshead->filename;
+                final_min_filename = firststatshead->filename;
                 flag++;
             }
             
@@ -176,11 +197,11 @@ static void* reduce(void* v){
                 
                 if(reduction->avgduration > final_max_avg_duration){
                     final_max_avg_duration = reduction->avgduration;
-                    //resultmaxfilename = strdup(reduction->filename);
+                    final_max_filename = strdup(reduction->filename);
                 }
                 else if(reduction->avgduration < final_min_avg_duration){
                     final_min_avg_duration = reduction->avgduration;
-                    //resultminfilename = strdup(reduction->filename);
+                    final_min_filename = strdup(reduction->filename);
                 }  
             }
 
@@ -188,11 +209,23 @@ static void* reduce(void* v){
 
                 if(reduction->avgusercountperyear > final_max_user_count){
                     final_max_user_count = reduction->avgusercountperyear;
-                    //resultmaxfilename = strdup(reduction->filename);
+                    final_max_filename = strdup(reduction->filename);
                 }
-                else if(reduction->avgusercountperyear < final_min_user_count){
+                else if(reduction->avgusercountperyear == final_max_user_count){
+                    if(strcmp(final_max_filename,reduction->filename) > 0){
+                        final_max_user_count = reduction->avgusercountperyear;
+                        final_max_filename = strdup(reduction->filename);
+                    }
+                }
+                if(reduction->avgusercountperyear < final_min_user_count){
                     final_min_user_count = reduction->avgusercountperyear;
-                    //resultminfilename = strdup(reduction->filename);
+                    final_min_filename = strdup(reduction->filename);
+                }
+                else if(reduction->avgusercountperyear == final_min_user_count){
+                    if(strcmp(final_min_filename,reduction->filename) > 0){
+                        final_min_user_count = reduction->avgusercountperyear;
+                        final_min_filename = strdup(reduction->filename);
+                    }
                 }
             }
         
@@ -208,23 +241,22 @@ static void* reduce(void* v){
                 }
             }
         }
+        if(current_query == E){
+            while(head!=NULL){
+                if(head->count > final_max_ccount){
+                    final_max_ccount = head->count;
+                    strcpy(final_max_ccode,head->ccode);
+                }
+                head = head->next;
+            } 
+        }
         pthread_mutex_unlock(&lock_mutex);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         usleep(0.5);
     }
 
     
-    if(current_query == E){
-       while(head!=NULL){
-            if(head->count > maxCCcount){
-                maxCCcount = head->count;
-                strcpy(cc,head->ccode);
-            }
-            head = head->next;
-        } 
-        printf("maxCCcount: %d\n",maxCCcount);
-        printf("maxCCcode: %s\n",cc);
-    }
+    
     pthread_cleanup_pop(1);
     return NULL;
 }
