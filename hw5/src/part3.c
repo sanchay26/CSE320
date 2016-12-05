@@ -249,10 +249,23 @@ static void* reduce(void* v){
                     maxAvgDuration = averageduration;
                     resultmaxfilename = strdup(filename);
                 }
-                else if(averageduration < minAvgDuration){
+                else if(averageduration == maxAvgDuration){
+                    if(strcmp(resultmaxfilename,filename) > 0){
+                        maxAvgDuration = averageduration;
+                        resultmaxfilename = filename;
+                    }
+                } 
+
+                if(averageduration < minAvgDuration){
                     minAvgDuration = averageduration;
                     resultminfilename = strdup(filename);
                 }
+                else if(averageduration == minAvgDuration){
+                    if(strcmp(resultminfilename,filename) > 0){
+                        minAvgDuration = averageduration;
+                        resultminfilename = filename;
+                    }
+                } 
             }
             
             if(current_query == C || current_query == D){
@@ -262,11 +275,22 @@ static void* reduce(void* v){
                     maxUserCount = avgusercountperyear;
                     resultmaxfilename = strdup(filename);
                 }
-                else if(avgusercountperyear < minUserCount){
+                else if(avgusercountperyear == maxUserCount){
+                    if(strcmp(resultmaxfilename,filename) > 0){
+                        maxUserCount = avgusercountperyear;
+                        resultmaxfilename = strdup(filename);
+                    }
+                } 
+                if(avgusercountperyear < minUserCount){
                     minUserCount = avgusercountperyear;
                     resultminfilename = strdup(filename);
-                    
                 }
+                else if(avgusercountperyear == minUserCount){
+                    if(strcmp(resultminfilename,filename) > 0){
+                        minUserCount = avgusercountperyear;
+                        resultminfilename = strdup(filename);
+                    }
+                } 
             }
             if(current_query == E){
 
