@@ -9,13 +9,12 @@ pthread_mutex_t lock_mutex;
 int readcount = 0;
 int writecount = 0;
 sem_t rmutex,wmutex,readTry,resource;
-
-//double maxAvgDuration = -1;
 int flag =0;
 static void cleanup_handler(void *arg)
 {
-
+    //Not required 
 } 
+
 int part4(size_t nthreads){
 
     sem_init(&rmutex,0,1);
@@ -53,7 +52,6 @@ int part4(size_t nthreads){
         "Query: %s\n",
         PART_STRINGS[current_part], QUERY_STRINGS[current_query]);
 
-    //printf("%f\n",maxAvgDuration);
     if(current_query == A){
         printf("%f\n",final_max_avg_duration);
         printf("%s\n",final_max_filename);  
@@ -289,7 +287,7 @@ static void* reduce(void* v){
 
 void* helpmap4(void* dir){
 
-    DIR *directory = (DIR*)dir;
+    DIR *directory = (DIR*)dir;     //Cast void* directory to DIR* 
     int return_code;
     struct dirent entry;
     struct dirent *result;
@@ -304,6 +302,5 @@ void* helpmap4(void* dir){
             //pthread_setname_np(&tid[i], (const char*)qwe);
         }
     }
-
     return NULL;
 }
