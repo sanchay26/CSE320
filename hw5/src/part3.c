@@ -4,6 +4,8 @@ static void* map(void*);
 static void* reduce(void*);
 
 pthread_mutex_t lock_mutex;
+int readcnt = 0;
+sem_t mutex,w;
 
 int fd;
 
@@ -30,6 +32,8 @@ int part3(size_t nthreads){
     pthread_t read_thread;
 
     pthread_mutex_init(&lock_mutex, NULL);
+    sem_init(&mutex,0,1);
+    sem_init(&w,0,1);
 
     fd = open("mapred.tmp",O_CREAT|O_TRUNC|O_RDWR,0666);
 
@@ -180,12 +184,14 @@ static void* map(void* v){
         double averageduration = totalduration/numoflines;
         char tmp[30];
         sprintf(tmp,"%f",averageduration);
-        pthread_mutex_lock(&lock_mutex);
+        //pthread_mutex_lock(&lock_mutex);
+        sem_wait(&w);
         write(fd,tmp,strlen(tmp));
         write(fd,",",1);
         write(fd,web->filename,strlen(web->filename));
         write(fd,"\n",1);
-        pthread_mutex_unlock(&lock_mutex);
+        sem_post(&w);
+        //pthread_mutex_unlock(&lock_mutex);
     }
 
     if(current_query == C || current_query == D){
@@ -194,24 +200,28 @@ static void* map(void* v){
         double avgusercountperyear = numoflines/distinctyears;
         char tmp[30];
         sprintf(tmp,"%f",avgusercountperyear);
-        pthread_mutex_lock(&lock_mutex);
+        //pthread_mutex_lock(&lock_mutex);
+        sem_wait(&w);
         write(fd,tmp,strlen(tmp));
         write(fd,",",1);
         write(fd,web->filename,strlen(web->filename));
         write(fd,"\n",1);
-        pthread_mutex_unlock(&lock_mutex);
+        sem_post(&w);
+        //pthread_mutex_unlock(&lock_mutex);
     }
 
     if(current_query == E){
         countrystruct* maxCC = findmaxccodes(countryduplicate);
         char tmp[30];
         sprintf(tmp,"%d",maxCC->count);
-        pthread_mutex_lock(&lock_mutex);
+        //pthread_mutex_lock(&lock_mutex);
+        sem_wait(&w);
         write(fd,tmp,strlen(tmp));
         write(fd,",",1);
         write(fd,maxCC->ccode,strlen(maxCC->ccode));
         write(fd,"\n",1);
-        pthread_mutex_unlock(&lock_mutex);
+        sem_post(&w);
+        //pthread_mutex_unlock(&lock_mutex);
         freecountry(countryduplicate);
         free(maxCC);
     }
@@ -225,6 +235,7 @@ static void* reduce(void* v){
     pthread_cleanup_push(cleanup_handler,NULL);
 
     while(1){
+
         double averageduration;
         double avgusercountperyear;
         char *filename;
@@ -236,7 +247,12 @@ static void* reduce(void* v){
         char *linedup;
 
         pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-        pthread_mutex_lock(&lock_mutex);
+        //pthread_mutex_lock(&lock_mutex);
+        sem_wait(&mutex);
+        readcnt++;
+        if(readcnt == 1)
+            sem_wait(&w);
+        sem_post(&mutex);
         while(fgets(line, 100, readp)!=NULL ) {
 
             linedup = line;
@@ -306,7 +322,12 @@ static void* reduce(void* v){
                 }
             }
         }
-        pthread_mutex_unlock(&lock_mutex);
+        //pthread_mutex_unlock(&lock_mutex);
+        sem_wait(&mutex);
+        readcnt--;
+        if(readcnt == 0)
+            sem_post(&w);
+        sem_post(&mutex);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         usleep(0.5);
     }

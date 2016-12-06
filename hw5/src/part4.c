@@ -6,6 +6,10 @@ static void* reduce(void*);
 
 pthread_mutex_t lock_mutex;
 
+int readcount = 0;
+int writecount = 0;
+sem_t rmutex,wmutex,readTry,resource;
+
 //double maxAvgDuration = -1;
 int flag =0;
 static void cleanup_handler(void *arg)
@@ -14,7 +18,11 @@ static void cleanup_handler(void *arg)
 } 
 int part4(size_t nthreads){
 
-   
+    sem_init(&rmutex,0,1);
+    sem_init(&wmutex,0,1);
+    sem_init(&readTry,0,1);
+    sem_init(&resource,0,1);
+       
     pthread_t tid[nthreads];
     pthread_t read_thread;
 
@@ -29,7 +37,7 @@ int part4(size_t nthreads){
 
     pthread_create(&read_thread,NULL,reduce,(void*)firststatshead);
 
-
+    printf("%s\n","HERE" );
     for(int i=0; i<nthreads;i++)
     {   
         pthread_join(tid[i],NULL);
@@ -100,7 +108,12 @@ static void* map(void* v){
       perror("Error opening file");
     }
 
-
+    sem_wait(&wmutex);
+    writecount++;
+    if(writecount == 1)
+        sem_wait(&readTry);
+    sem_post(&wmutex);
+    sem_wait(&resource);
     while( fgets (line, 100, fp)!=NULL ) {
       
       numoflines++;
@@ -156,12 +169,16 @@ static void* map(void* v){
     }
 
     fclose(fp);
-    
     werrorchut((void*)ip);
-    
-
     web->avgduration = totalduration/numoflines;
     addStatToList(web);
+    sem_post(&resource);
+
+    sem_wait(&wmutex);
+    writecount--;
+    if(writecount == 0)
+        sem_post(&readTry);
+    sem_post(&wmutex);
 
     return NULL;
 }
@@ -175,7 +192,14 @@ static void* reduce(void* v){
     while(1){
         
         pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-        pthread_mutex_lock(&lock_mutex);
+        //pthread_mutex_lock(&lock_mutex);
+        sem_wait(&readTry);
+        sem_wait(&rmutex);
+        readcount++;
+        if(readcount == 1)
+            sem_wait(&resource);
+        sem_post(&rmutex);
+        sem_post(&readTry);
         
         for(reduction = firststatshead; reduction!=NULL;reduction= reduction->next){
 
@@ -246,7 +270,12 @@ static void* reduce(void* v){
                 head = head->next;
             } 
         }
-        pthread_mutex_unlock(&lock_mutex);
+        //pthread_mutex_unlock(&lock_mutex);
+        sem_wait(&rmutex);
+        readcount--;
+        if(readcount == 0)
+            sem_post(&resource);
+        sem_post(&rmutex);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         usleep(0.5);
     }
