@@ -9,7 +9,7 @@ pthread_mutex_t lock_mutex;
 int readcount = 0;
 int writecount = 0;
 sem_t rmutex,wmutex,readTry,resource;
-int flag =0;
+static int flag =0;
 static void cleanup_handler(void *arg)
 {
     //Not required 
@@ -36,13 +36,11 @@ int part4(size_t nthreads){
 
     pthread_create(&read_thread,NULL,reduce,(void*)firststatshead);
 
-    printf("%s\n","HERE" );
     for(int i=0; i<nthreads;i++)
     {   
         pthread_join(tid[i],NULL);
     }
 
-    //reduce((void*)firststatshead);
     pthread_cancel(read_thread);
 
     pthread_join(read_thread,NULL);
@@ -53,28 +51,33 @@ int part4(size_t nthreads){
         PART_STRINGS[current_part], QUERY_STRINGS[current_query]);
 
     if(current_query == A){
-        printf("%f\n",final_max_avg_duration);
-        printf("%s\n",final_max_filename);  
+        printf("%s ","Result:");
+        printf("%f, ",final_max_avg_duration);
+        printf("%s",final_max_filename);  
     }
 
     if(current_query == B){
-        printf("%f\n",final_min_avg_duration);
-        printf("%s\n",final_min_filename);  
+        printf("%s ","Result:");
+        printf("%f, ",final_min_avg_duration);
+        printf("%s",final_min_filename);  
     }
 
     if(current_query == C){
-        printf("%f\n",final_max_user_count);
-        printf("%s\n",final_max_filename);  
+        printf("%s ","Result:");
+        printf("%f, ",final_max_user_count);
+        printf("%s",final_max_filename);  
     }
 
     if(current_query == D){
-        printf("%f\n",final_min_user_count);
-        printf("%s\n",final_min_filename);  
+        printf("%s ","Result:");
+        printf("%f, ",final_min_user_count);
+        printf("%s",final_min_filename);  
     }
 
     if(current_query == E){
-        printf("%d\n",final_max_ccount);
-        printf("%s\n",final_max_ccode);
+        printf("%s ","Result:");
+        printf("%d, ",final_max_ccount);
+        printf("%s",final_max_ccode);
     }
 
     return 0;

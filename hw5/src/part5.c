@@ -11,10 +11,10 @@ pthread_mutex_t lock_mutex;
 
 DIR *directoryp;
 
-double maxAvgDuration5 = -1; 
-double minAvgDuration5 = 1000;
-double maxUserCount5 = -1; 
-double minUserCount5 = 10000;
+double maxAvgDuration5; 
+double minAvgDuration5;
+double maxUserCount5; 
+double minUserCount5;
 char *resultmaxfilename5;
 char *resultminfilename5;
 char finalcc5[2];
@@ -23,6 +23,7 @@ countrystruct *head5 = NULL;
 struct epoll_event events[50];
 struct epoll_event event;
 int epfd;
+static int flag = 0;
 
 static void cleanup_handler(void *arg)
 {
@@ -42,9 +43,9 @@ int part5(size_t nthreads){
         int fd[2];
         socketpair(PF_LOCAL, SOCK_STREAM, 0,fd);
         event.data.fd = fd[0];
-        event.events = EPOLLIN;
+        event.events = EPOLLIN | EPOLLET;
         int s = epoll_ctl(epfd, EPOLL_CTL_ADD, fd[0], &event);
-        if (0>s)
+        if (s < 0)
         {
           perror("epoll_ctl");
           abort();
@@ -73,24 +74,29 @@ int part5(size_t nthreads){
         "Part: %s\n"
         "Query: %s\n",
         PART_STRINGS[current_part], QUERY_STRINGS[current_query]);
+    
     if(current_query == A){
-        printf("%f\n",maxAvgDuration5);
-        printf("%s\n",resultmaxfilename5);  
+        printf("%s ","Result:");
+        printf("%f, ",maxAvgDuration5);
+        printf("%s",resultmaxfilename5);  
     }
 
     if(current_query == B){
-        printf("%f\n",minAvgDuration5);
-        printf("%s\n",resultminfilename5);  
+        printf("%s ","Result:");
+        printf("%f, ",minAvgDuration5);
+        printf("%s",resultminfilename5);  
     }
 
     if(current_query == C){
-        printf("%f\n",maxUserCount5);
-        printf("%s\n",resultmaxfilename5);  
+        printf("%s ","Result:");
+        printf("%f, ",maxUserCount5);
+        printf("%s",resultmaxfilename5);  
     }
 
     if(current_query == D){
-        printf("%f\n",minUserCount5);
-        printf("%s\n",resultminfilename5);  
+        printf("%s ","Result:");
+        printf("%f, ",minUserCount5);
+        printf("%s",resultminfilename5);  
     }
 
     if(current_query == E){
@@ -102,8 +108,9 @@ int part5(size_t nthreads){
             }
             head5 = head5->next;
         }
-        printf("%d\n",count5);
-        printf("%s\n",finalcc5);
+        printf("%s ","Result:");
+        printf("%d, ",count5);
+        printf("%s",finalcc5);
     }
     return 0;
 }
@@ -139,7 +146,7 @@ static void* map(void* v){
       
       numoflines++;
       linedup = line;
-      
+      usleep(0.000000001);
       //-----------------------------Dont change the order ----------------------
       timestamp = strsep (&linedup,",");    
       ip = strsep (&linedup,",");    
@@ -181,7 +188,7 @@ static void* map(void* v){
     
 
     if(current_query == A || current_query == B){
-
+        //usleep(2000);
         double averageduration = totalduration/numoflines;
         char tmp[30];
         sprintf(tmp,"%f",averageduration);
@@ -193,8 +200,12 @@ static void* map(void* v){
         write(web->writefd,web->filename,strlen(web->filename));
         write(web->writefd,"\n",1);
         //sem_post(&w);
-        
+        // int* slow = malloc(sizeof(int));
+        // int* slowmore = malloc(sizeof(int));
+        // free(slow);
+        // free(slowmore);
         pthread_mutex_unlock(&lock_mutex);
+        
     }
 
     if(current_query == C || current_query == D){
@@ -214,10 +225,11 @@ static void* map(void* v){
     }
 
     if(current_query == E){
+        pthread_mutex_lock(&lock_mutex);
         countrystruct* maxCC = findmaxccodes(countryduplicate);
         char tmp[30];
         sprintf(tmp,"%d",maxCC->count);
-        pthread_mutex_lock(&lock_mutex);
+        
         //sem_wait(&w);
         write(web->writefd,tmp,strlen(tmp));
         write(web->writefd,",",1);
@@ -227,6 +239,7 @@ static void* map(void* v){
         pthread_mutex_unlock(&lock_mutex);
         freecountry(countryduplicate);
         free(maxCC);
+        usleep(500);
     }
 
     return NULL;
@@ -265,6 +278,14 @@ static void* reduce(void* v){
 
                 averageduration = atof(strsep (&linedup,","));   
                 filename = strsep(&linedup,"\n"); 
+
+                if(flag == 0){
+                    maxAvgDuration5 = averageduration;
+                    minAvgDuration5 = averageduration;
+                    resultmaxfilename5 = strdup(filename);
+                    resultminfilename5 = strdup(filename);
+                    flag++;
+                }
                 
                 if(averageduration > maxAvgDuration5){
                     maxAvgDuration5 = averageduration;
@@ -293,6 +314,13 @@ static void* reduce(void* v){
             if(current_query == C || current_query == D){
                 avgusercountperyear = atof(strsep (&linedup,","));   
                 filename = strsep(&linedup,"\n"); 
+                if(flag == 0){
+                    maxUserCount5 = avgusercountperyear;
+                    minUserCount5 = avgusercountperyear;
+                    resultmaxfilename5 = strdup(filename);
+                    resultminfilename5 = strdup(filename);
+                    flag++;
+                }
                 if(avgusercountperyear > maxUserCount5){
                     maxUserCount5 = avgusercountperyear;
                     resultmaxfilename5 = strdup(filename);
@@ -332,7 +360,7 @@ static void* reduce(void* v){
         pthread_mutex_unlock(&lock_mutex);
     }
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-    usleep(0.5);
+    usleep(5);
     
 }
     pthread_cleanup_pop(1);

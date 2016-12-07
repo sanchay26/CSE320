@@ -34,28 +34,33 @@ int part2(size_t nthreads) {
         PART_STRINGS[current_part], QUERY_STRINGS[current_query]);
 
     if(current_query == A){
-        printf("%f\n",final_max_avg_duration);
-        printf("%s\n",final_max_filename);  
+        printf("%s ","Result:");
+        printf("%f, ",final_max_avg_duration);
+        printf("%s",final_max_filename);  
     }
 
     if(current_query == B){
-        printf("%f\n",final_min_avg_duration);
-        printf("%s\n",final_min_filename);  
+        printf("%s ","Result:");
+        printf("%f, ",final_min_avg_duration);
+        printf("%s",final_min_filename);  
     }
 
     if(current_query == C){
-        printf("%f\n",final_max_user_count);
-        printf("%s\n",final_max_filename);  
+        printf("%s ","Result:");
+        printf("%f, ",final_max_user_count);
+        printf("%s",final_max_filename);  
     }
 
     if(current_query == D){
-        printf("%f\n",final_min_user_count);
-        printf("%s\n",final_min_filename);  
+        printf("%s ","Result:");
+        printf("%f, ",final_min_user_count);
+        printf("%s",final_min_filename);  
     }
 
     if(current_query == E){
-        printf("%d\n",final_max_ccount);
-        printf("%s\n",final_max_ccode);
+        printf("%s ","Result:");
+        printf("%d, ",final_max_ccount);
+        printf("%s",final_max_ccode);
     }
 
     return 0;
@@ -241,8 +246,6 @@ static void* reduce(void* v){
             }
             head = head->next;
         } 
-        printf("maxCCcount: %d\n",maxCCcount);
-        printf("maxCCcode: %s\n",cc);
     }
 
     final_max_avg_duration = maxAvgDuration;

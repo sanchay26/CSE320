@@ -9,12 +9,14 @@ sem_t mutex,w;
 
 int fd;
 
+static int flag = 0;
+
 FILE *readp;
 
-double maxAvgDuration = -1; 
-double minAvgDuration = 1000;
-double maxUserCount = -1; 
-double minUserCount = 10000;
+double maxAvgDuration; 
+double minAvgDuration;
+double maxUserCount; 
+double minUserCount;
 char *resultmaxfilename;
 char *resultminfilename;
 char finalcc[2];
@@ -72,23 +74,27 @@ int part3(size_t nthreads){
         PART_STRINGS[current_part], QUERY_STRINGS[current_query]);
 
     if(current_query == A){
-        printf("%f\n",maxAvgDuration);
-        printf("%s\n",resultmaxfilename);  
+        printf("%s ","Result:");
+        printf("%f, ",maxAvgDuration);
+        printf("%s",resultmaxfilename);  
     }
 
     if(current_query == B){
-        printf("%f\n",minAvgDuration);
-        printf("%s\n",resultminfilename);  
+        printf("%s ","Result:");
+        printf("%f, ",minAvgDuration);
+        printf("%s",resultminfilename);  
     }
 
     if(current_query == C){
-        printf("%f\n",maxUserCount);
-        printf("%s\n",resultmaxfilename);  
+        printf("%s ","Result:");
+        printf("%f, ",maxUserCount);
+        printf("%s",resultmaxfilename);  
     }
 
     if(current_query == D){
-        printf("%f\n",minUserCount);
-        printf("%s\n",resultminfilename);  
+        printf("%s ","Result:");
+        printf("%f, ",minUserCount);
+        printf("%s",resultminfilename);  
     }
 
     if(current_query == E){
@@ -100,8 +106,9 @@ int part3(size_t nthreads){
             }
             head = head->next;
         }
-        printf("%d\n",count);
-        printf("%s\n",finalcc);
+        printf("%s ","Result:");
+        printf("%d, ",count);
+        printf("%s",finalcc);
     }
 return 0;
 }
@@ -260,7 +267,13 @@ static void* reduce(void* v){
             if(current_query == A || current_query == B){
                 averageduration = atof(strsep (&linedup,","));   
                 filename = strsep(&linedup,"\n"); 
-                
+                if(flag == 0){
+                    maxAvgDuration = averageduration;
+                    minAvgDuration = averageduration;
+                    resultmaxfilename = strdup(filename);
+                    resultminfilename = strdup(filename);
+                    flag++;
+                }
                 if(averageduration > maxAvgDuration){
                     maxAvgDuration = averageduration;
                     resultmaxfilename = strdup(filename);
@@ -287,6 +300,14 @@ static void* reduce(void* v){
             if(current_query == C || current_query == D){
                 avgusercountperyear = atof(strsep (&linedup,","));   
                 filename = strsep(&linedup,"\n"); 
+
+                if(flag == 0){
+                    maxUserCount = avgusercountperyear;
+                    minUserCount = avgusercountperyear;
+                    resultmaxfilename = strdup(filename);
+                    resultminfilename = strdup(filename);
+                    flag++;
+                }
                 if(avgusercountperyear > maxUserCount){
                     maxUserCount = avgusercountperyear;
                     resultmaxfilename = strdup(filename);
@@ -312,6 +333,7 @@ static void* reduce(void* v){
 
                 ccount = atoi(strsep (&linedup,","));   
                 cc = strsep(&linedup,"\n"); 
+
                 countrystruct *current2 = findcountry(head,cc);
 
                 if(current2 == NULL){
