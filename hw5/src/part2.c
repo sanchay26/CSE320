@@ -214,7 +214,7 @@ static void* reduce(void* v){
             }
             else if(reduction->avgusercountperyear == minAvgUserCount){
                 if(strcmp(resultminfilename,reduction->filename) > 0){
-                    maxAvgUserCount = reduction->avgusercountperyear;
+                    minAvgUserCount = reduction->avgusercountperyear;
                     resultminfilename = reduction->filename;
                 }
             }

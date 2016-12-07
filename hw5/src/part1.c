@@ -50,7 +50,7 @@ int part1(){
     reduce((void*)firststatshead);
 
     
-    freestats(firststatshead);
+    
     
     printf("Number of files: %d\n",numfiles);
     /* DELETE THIS: THIS IS TO QUIET COMPILER ERRORS */
@@ -85,7 +85,7 @@ int part1(){
         printf("%s\n",final_max_ccode);
     }
 
-
+    freestats(firststatshead);
     return 0;
 }
 
@@ -230,23 +230,26 @@ static void* reduce(void* v){
 
             if(reduction->avgusercountperyear > maxAvgUserCount){
                 maxAvgUserCount = reduction->avgusercountperyear;
-                resultmaxfilename = reduction->filename;
+                resultmaxfilename = strdup(reduction->filename);
+                //strcpy(resultmaxfilename,reduction->filename);
             }
             else if(reduction->avgusercountperyear == maxAvgUserCount){
+
                 if(strcmp(resultmaxfilename,reduction->filename) > 0){
                     maxAvgUserCount = reduction->avgusercountperyear;
-                    resultmaxfilename = reduction->filename;
+                    resultmaxfilename = strdup(reduction->filename);
+                    //strcpy(resultmaxfilename,reduction->filename);
                 }
             } 
             
             if(reduction->avgusercountperyear < minAvgUserCount){
                 minAvgUserCount = reduction->avgusercountperyear;
-                resultminfilename = reduction->filename;
+                resultminfilename = strdup(reduction->filename);
             }
             else if(reduction->avgusercountperyear == minAvgUserCount){
                 if(strcmp(resultminfilename,reduction->filename) > 0){
-                    maxAvgUserCount = reduction->avgusercountperyear;
-                    resultminfilename = reduction->filename;
+                    minAvgUserCount = reduction->avgusercountperyear;
+                    resultminfilename = strdup(reduction->filename);
                 }
             }
 
