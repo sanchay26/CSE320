@@ -67,6 +67,7 @@ struct Stats {
   char maxCC[2];  
   int maxCCcount;          
   char* filename;
+  int writefd;
   struct Stats* next;
 };
 typedef struct Stats Stats;
@@ -83,6 +84,11 @@ struct yearstruct
 };
 typedef struct yearstruct yearstruct;
 
+struct fdss
+{
+    int filedes;
+};
+typedef struct fdss fdss;
 struct countrystruct
 {
     int count;
@@ -130,6 +136,8 @@ void* helpmap3(void* dir);
 
 void* helpmap4(void* dir);
 
+void* helpmap5(void *wfd);
+
 void* helpmap(void* dir);
 
 double final_max_avg_duration;
@@ -147,5 +155,6 @@ char final_max_ccode[2];
 char* final_max_filename;
 
 char* final_min_filename;
+
 
 #endif /* LOTT_H */
