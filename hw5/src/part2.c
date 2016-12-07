@@ -3,9 +3,15 @@
 static void* map(void*);
 static void* reduce(void*);
 
+/*
+Part2 function creates nthreads. Call helpmap() for each thread where the directory is read.
+Most of the code is similar to part1 but creates only nthreads instead of creating nfiles threds.
+*/
+
+
 int part2(size_t nthreads) {
 
-    pthread_t tid[nthreads];
+    pthread_t tid[nthreads];            // nthreads threadid created 
     DIR *directory = opendir(DATA_DIR);
     char index[30] = "";
     for(int i=0;i<nthreads;i++){
@@ -14,17 +20,17 @@ int part2(size_t nthreads) {
         char name[20] = "map";
         sprintf(index,"%d",i);
         strcat(name,index);
-        pthread_setname_np(tid[i],name);
+        pthread_setname_np(tid[i],name);            //setting name of the thread 
     }
 
     for(int i=0; i<nthreads;i++)
     {   
-        pthread_join(tid[i],NULL);
+        pthread_join(tid[i],NULL);              // joining all the map threads 
     }
 
     closedir(directory);
     
-    reduce((void*)firststatshead);
+    reduce((void*)firststatshead);              // reduce called after joining all map threads 
 
     freestats(firststatshead);
 
@@ -66,6 +72,9 @@ int part2(size_t nthreads) {
     return 0;
 }
 
+
+// map calculates required info for each file and store it into global structure which is then passed to reduce to get
+// final output 
 static void* map(void* v){
     Stats *web = (Stats*)v;
     char filepath[1024];
@@ -93,7 +102,7 @@ static void* map(void* v){
       perror("Error opening file");
     }
     //printf("%s\n", "did you come here");
-    while( fgets (line, 100, fp)!=NULL ) 
+    while( fgets (line, 100, fp)!=NULL )                // reads the file 
     {
       numoflines++;
       linedup = line;

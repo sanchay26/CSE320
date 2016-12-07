@@ -8,7 +8,7 @@ pthread_mutex_t lock_mutex;
 
 int readcount = 0;
 int writecount = 0;
-sem_t rmutex,wmutex,readTry,resource;
+sem_t rmutex,wmutex,readTry,resource;           //Using Semaphores for lockes and giving writer Preference 
 static int flag =0;
 static void cleanup_handler(void *arg)
 {
@@ -19,7 +19,7 @@ int part4(size_t nthreads){
 
     sem_init(&rmutex,0,1);
     sem_init(&wmutex,0,1);
-    sem_init(&readTry,0,1);
+    sem_init(&readTry,0,1);             // Initializing Semaphores 
     sem_init(&resource,0,1);
        
     pthread_t tid[nthreads];
@@ -29,19 +29,24 @@ int part4(size_t nthreads){
 
     DIR *directory = opendir(DATA_DIR);
 
+    char index[30]="";
     for(int i=0;i<nthreads;i++){
 
-       pthread_create(&tid[i],NULL,helpmap4,(void*)directory);
+       pthread_create(&tid[i],NULL,helpmap4,(void*)directory);              // Creating Nthreads and giving name
+       char name[20] = "map";
+        sprintf(index,"%d",i);
+        strcat(name,index);
+        pthread_setname_np(tid[i],name);
     }
 
-    pthread_create(&read_thread,NULL,reduce,(void*)firststatshead);
+    pthread_create(&read_thread,NULL,reduce,(void*)firststatshead);         // Read is created as a thread 
 
     for(int i=0; i<nthreads;i++)
     {   
-        pthread_join(tid[i],NULL);
+        pthread_join(tid[i],NULL);                      // All the map thrads are joined 
     }
 
-    pthread_cancel(read_thread);
+    pthread_cancel(read_thread);                // reduce thread is cancelled once all map threads joins 
 
     pthread_join(read_thread,NULL);
 
@@ -64,7 +69,7 @@ int part4(size_t nthreads){
 
     if(current_query == C){
         printf("%s ","Result:");
-        printf("%f, ",final_max_user_count);
+        printf("%f, ",final_max_user_count);        //Printing Final results for each query
         printf("%s",final_max_filename);  
     }
 
@@ -112,7 +117,7 @@ static void* map(void* v){
     sem_wait(&wmutex);
     writecount++;
     if(writecount == 1)
-        sem_wait(&readTry);
+        sem_wait(&readTry);                     //Giving Writer Preference through Semaphores 
     sem_post(&wmutex);
     sem_wait(&resource);
     while( fgets (line, 100, fp)!=NULL ) {
@@ -177,7 +182,7 @@ static void* map(void* v){
 
     sem_wait(&wmutex);
     writecount--;
-    if(writecount == 0)
+    if(writecount == 0)             //Decementing the write count. Semaphores avoids race condition and give writer preference
         sem_post(&readTry);
     sem_post(&wmutex);
 
@@ -275,7 +280,7 @@ static void* reduce(void* v){
         sem_wait(&rmutex);
         readcount--;
         if(readcount == 0)
-            sem_post(&resource);
+            sem_post(&resource);                        //Using semaphores for Locks and giving writer preference over reduce
         sem_post(&rmutex);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         usleep(0.5);
@@ -301,7 +306,7 @@ void* helpmap4(void* dir){
         {
             Stats *insertStat = createStat();
             insertStat->filename = strdup(entry.d_name);
-            map((void*)insertStat);
+            map((void*)insertStat);     //Calls map for each file in directory 
             //pthread_setname_np(&tid[i], (const char*)qwe);
         }
     }

@@ -8,13 +8,18 @@ static void* reduce(void*);
 
 int numfiles = 0;
 
+
+/**Part 1 function gets the number of files spawns those many threads and call map for each thread.
+//Reads the directory   
+*/
+
 int part1(){
 
     
     numfiles = nfiles();
     pthread_t tid[numfiles];
     int return_code;
-    DIR *directory = opendir(DATA_DIR);
+    DIR *directory = opendir(DATA_DIR); // open directory 
     struct dirent entry;
     struct dirent *result;
     int i=0;
@@ -23,8 +28,8 @@ int part1(){
     {
        if(entry.d_type == DT_REG)
         {
-            Stats *insertStat = createStat();
-            insertStat->filename = strdup(entry.d_name);
+            Stats *insertStat = createStat();   
+            insertStat->filename = strdup(entry.d_name);            //saves info in global Structure for each file.
             pthread_create(&tid[i],NULL,map,(void*)insertStat);
             char name[20] = "map";
             sprintf(index,"%d",i);
@@ -43,11 +48,11 @@ int part1(){
    
     for(int i=0; i<numfiles;i++)
     {   
-        pthread_join(tid[i],NULL);
+        pthread_join(tid[i],NULL);          // joining all the map threas. once they are joined reduce is called.
     }
 
 
-    reduce((void*)firststatshead);
+    reduce((void*)firststatshead);              // Calling reduce passed with first address of the global structure.
 
     
     
@@ -90,9 +95,12 @@ int part1(){
         printf("%s",final_max_ccode);
     }
 
-    freestats(firststatshead);
+    freestats(firststatshead);              // Freeing the global struct used.
     return 0;
 }
+
+
+// For each file map calculates the required data and store the info into the global struct.
 
 static void* map(void* v){
 
@@ -115,14 +123,14 @@ static void* map(void* v){
     countrystruct *countryduplicate = NULL;
     
 
-    FILE *fp; 
+    FILE *fp;                           // opens the file pointer for each filepath.
     fp = fopen(filepath,"r");
     if(fp == NULL) 
     {
       perror("Error opening file");
     }
     //printf("%s\n", "did you come here");
-    while( fgets (line, 100, fp)!=NULL ) 
+    while( fgets (line, 100, fp)!=NULL )            // reads through the file/
     {
       numoflines++;
       linedup = line;
@@ -138,7 +146,7 @@ static void* map(void* v){
       {
         time_t rawtime = atoi(timestamp);
         localtime_r(&rawtime,&info);
-        strftime(year,80,"%Y",&info);
+        strftime(year,80,"%Y",&info);                   
         intyear = atoi(year);
         yearstruct *current = findyear(duplicate,intyear);
         
@@ -187,6 +195,10 @@ static void* map(void* v){
     addStatToList(web);
     return NULL;
 }
+
+/*Reduce iterates through the global buffer filled by each map reduce and reduce the output of all maps to one reduced
+Final output.
+*/
 
 static void* reduce(void* v){
 
@@ -297,7 +309,7 @@ static void* reduce(void* v){
 
     return NULL;
 }
-
+// Calculates number of files in directory to make those many threads in part1()
 int nfiles(){
     int number_of_files = 0;
     DIR * directory;
@@ -313,7 +325,7 @@ int nfiles(){
     closedir(directory);
 return number_of_files;
 }
-
+// Create an instance of global Structure to save data for each map()
 Stats* createStat(){
     Stats *newStat = malloc(sizeof(Stats));
     newStat->filename = NULL;
@@ -325,7 +337,7 @@ Stats* createStat(){
     newStat->next = NULL;
 return newStat;
 }
-
+// It adds created instance of Structure to the list.
 void addStatToList(Stats* add){
 
     if(firststatshead == NULL)
@@ -339,7 +351,7 @@ void addStatToList(Stats* add){
         statshead = statshead->next;
     }
 }
-
+// for debugging purpose 
 void printstats(){
     printf("%s\n","--------------------------------------------------------" );
     Stats* first;
@@ -351,7 +363,7 @@ void printstats(){
     }
     printf("%s\n","--------------------------------------------------------" );
 }
-
+// To get rid of werror for some variable 
 void werrorchut(void *p){
 
 }
@@ -372,7 +384,7 @@ yearstruct* findyear(yearstruct *head, int value){
     }
     return counter;
 }
-
+// push a distinct year to the list 
 void pushyeartolist(yearstruct **head, yearstruct *item){
 
     item->next = *head;
@@ -387,7 +399,7 @@ double calculateDistintYears(yearstruct *head){
     }
     return i;
 }
-
+//frees year struct
 void freeyears(yearstruct *head){
     yearstruct *current;
     while((current = head)!= NULL){
@@ -395,7 +407,7 @@ void freeyears(yearstruct *head){
         free(current);
     }
 }
-
+//free country struct 
 void freecountry(countrystruct *head){
     countrystruct *current;
     while((current = head)!= NULL){
@@ -403,7 +415,7 @@ void freecountry(countrystruct *head){
         free(current);
     }
 }
-
+// free stats struct 
 void freestats(Stats *head){
     Stats *current;
     while((current = head)!= NULL){
@@ -428,7 +440,7 @@ countrystruct* createcountryforreduce(char *value, int count){
     return newcountrystruct;
 }
 
-
+// find a country in the list
 countrystruct* findcountry(countrystruct *head, char* value){
     countrystruct *counter = head;
 
@@ -443,7 +455,7 @@ void pushcountrytolist(countrystruct **head, countrystruct *item){
     item->next = *head;
     *head = item;
 }
-
+// find max ccodes in the country struct
 countrystruct* findmaxccodes(countrystruct *head){
 
     countrystruct *maxCC = malloc(sizeof(countrystruct));

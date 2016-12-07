@@ -37,9 +37,9 @@ int part3(size_t nthreads){
     sem_init(&mutex,0,1);
     sem_init(&w,0,1);
 
-    fd = open("mapred.tmp",O_CREAT|O_TRUNC|O_RDWR,0666);
+    fd = open("mapred.tmp",O_CREAT|O_TRUNC|O_RDWR,0666);        //opens file to write for each map 
 
-    readp = fopen("mapred.tmp","r");
+    readp = fopen("mapred.tmp","r");                    //reads mapred.tmp to calculate final output 
 
     if(readp == NULL) 
     {
@@ -48,12 +48,17 @@ int part3(size_t nthreads){
 
     DIR *directory = opendir(DATA_DIR);
 
+    char index[30]="";
     for(int i=0;i<nthreads;i++){
 
        pthread_create(&tid[i],NULL,helpmap3,(void*)directory);
+        char name[20] = "map";
+        sprintf(index,"%d",i);
+        strcat(name,index);
+        pthread_setname_np(tid[i],name);
     }
 
-    pthread_create(&read_thread,NULL,reduce,NULL);
+    pthread_create(&read_thread,NULL,reduce,NULL);              // Readuce is also created as a thread 
 
 
     for(int i=0; i<nthreads;i++)
@@ -61,11 +66,11 @@ int part3(size_t nthreads){
         pthread_join(tid[i],NULL);
     }
 
-    pthread_cancel(read_thread);
+    pthread_cancel(read_thread);                // cancels the reuce thread once all maps are joined 
 
     pthread_join(read_thread,NULL);
     
-    //unlink("mapred.tmp");
+    unlink("mapred.tmp"); //delete mapred.tmp
 
 
     printf(
@@ -192,8 +197,8 @@ static void* map(void* v){
         char tmp[30];
         sprintf(tmp,"%f",averageduration);
         //pthread_mutex_lock(&lock_mutex);
-        sem_wait(&w);
-        write(fd,tmp,strlen(tmp));
+        sem_wait(&w);                                   //Semaphores used to give locks while writing to avoid race 
+        write(fd,tmp,strlen(tmp));                  //writes info to the filedescriptor for mapred.tmp
         write(fd,",",1);
         write(fd,web->filename,strlen(web->filename));
         write(fd,"\n",1);
@@ -206,8 +211,8 @@ static void* map(void* v){
         freeyears(duplicate);
         double avgusercountperyear = numoflines/distinctyears;
         char tmp[30];
-        sprintf(tmp,"%f",avgusercountperyear);
-        //pthread_mutex_lock(&lock_mutex);
+        sprintf(tmp,"%f",avgusercountperyear);      //Semaphores used to give locks while writing to avoid race 
+        //pthread_mutex_lock(&lock_mutex);          //writes info to the filedescriptor for mapred.tmp
         sem_wait(&w);
         write(fd,tmp,strlen(tmp));
         write(fd,",",1);
@@ -224,8 +229,8 @@ static void* map(void* v){
         //pthread_mutex_lock(&lock_mutex);
         sem_wait(&w);
         write(fd,tmp,strlen(tmp));
-        write(fd,",",1);
-        write(fd,maxCC->ccode,strlen(maxCC->ccode));
+        write(fd,",",1);                                    //Semaphores used to give locks while writing to avoid race 
+        write(fd,maxCC->ccode,strlen(maxCC->ccode));        //writes info to the filedescriptor for mapred.tmp
         write(fd,"\n",1);
         sem_post(&w);
         //pthread_mutex_unlock(&lock_mutex);
@@ -253,11 +258,12 @@ static void* reduce(void* v){
         char line[100];
         char *linedup;
 
-        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);       // disabling cancel state for thread to ensure reduce 
+                                                                    // is not cancelled in between
         //pthread_mutex_lock(&lock_mutex);
         sem_wait(&mutex);
         readcnt++;
-        if(readcnt == 1)
+        if(readcnt == 1)                            // Gives reader preference to read from a file using Semaphores 
             sem_wait(&w);
         sem_post(&mutex);
         while(fgets(line, 100, readp)!=NULL ) {
@@ -347,10 +353,10 @@ static void* reduce(void* v){
         //pthread_mutex_unlock(&lock_mutex);
         sem_wait(&mutex);
         readcnt--;
-        if(readcnt == 0)
+        if(readcnt == 0)                                        // Semaphores used to give reader preference and avoid race
             sem_post(&w);
         sem_post(&mutex);
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);            // thread is cancelled once all the map finishes 
         usleep(0.5);
     }
     pthread_cleanup_pop(1);
@@ -373,7 +379,7 @@ void* helpmap3(void* dir){
         {   
             Stats *insertStat = createStat();
             insertStat->filename = strdup(entry.d_name);
-            map((void*)insertStat);
+            map((void*)insertStat);                             // for each file in directory map is called 
             //pthread_setname_np(&tid[i], (const char*)qwe);
         }
     }

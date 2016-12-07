@@ -20,7 +20,7 @@ char *resultminfilename5;
 char finalcc5[2];
 int count5 = 0;
 countrystruct *head5 = NULL;
-struct epoll_event events[50];
+struct epoll_event events[50];      //epoll event 
 struct epoll_event event;
 int epfd;
 static int flag = 0;
@@ -39,15 +39,17 @@ int part5(size_t nthreads){
 
     epfd = epoll_create(nthreads);
 
+    char index[30]="";
+
     for(int i=0;i<nthreads;i++){
-        int fd[2];
-        socketpair(PF_LOCAL, SOCK_STREAM, 0,fd);
-        event.data.fd = fd[0];
-        event.events = EPOLLIN | EPOLLET;
+        int fd[2];                                              //file descriptors one end is given to reduce and one to map
+        socketpair(PF_LOCAL, SOCK_STREAM, 0,fd);                ///Sockets are created 
+        event.data.fd = fd[0];                                    //registering file desciptor to epoll for reading
+        event.events = EPOLLIN | EPOLLET;                       
         int s = epoll_ctl(epfd, EPOLL_CTL_ADD, fd[0], &event);
         if (s < 0)
         {
-          perror("epoll_ctl");
+          perror("epoll_ctl");              //error if too many fd
           abort();
         }
 
@@ -56,9 +58,13 @@ int part5(size_t nthreads){
         fds->filedes = fd[1];
 
         pthread_create(&tid[i],NULL,helpmap5,(void*)fds);
+        char name[20] = "map";
+        sprintf(index,"%d",i);
+        strcat(name,index);
+        pthread_setname_np(tid[i],name);
     }
 
-    pthread_create(&read_thread,NULL,reduce,NULL);
+    pthread_create(&read_thread,NULL,reduce,NULL);      // read is created as a thread 
 
 
     for(int i=0; i<nthreads;i++)
@@ -66,7 +72,7 @@ int part5(size_t nthreads){
         pthread_join(tid[i],NULL);
     }
 
-    pthread_cancel(read_thread);
+    pthread_cancel(read_thread);            // cancelling read when map joins 
 
     pthread_join(read_thread,NULL);
 
@@ -95,7 +101,7 @@ int part5(size_t nthreads){
 
     if(current_query == D){
         printf("%s ","Result:");
-        printf("%f, ",minUserCount5);
+        printf("%f, ",minUserCount5);           //prints out the final results for each query 
         printf("%s",resultminfilename5);  
     }
 
@@ -197,7 +203,7 @@ static void* map(void* v){
         
         write(web->writefd,tmp,strlen(tmp));
         write(web->writefd,",",1);
-        write(web->writefd,web->filename,strlen(web->filename));
+        write(web->writefd,web->filename,strlen(web->filename));            // writing to one end of socket pair 
         write(web->writefd,"\n",1);
         //sem_post(&w);
         // int* slow = malloc(sizeof(int));
@@ -218,7 +224,7 @@ static void* map(void* v){
         //sem_wait(&w);
         write(web->writefd,tmp,strlen(tmp));
         write(web->writefd,",",1);
-        write(web->writefd,web->filename,strlen(web->filename));
+        write(web->writefd,web->filename,strlen(web->filename));    // writing to one end of socket pair 
         write(web->writefd,"\n",1);
         //sem_post(&w);
         pthread_mutex_unlock(&lock_mutex);
@@ -233,13 +239,13 @@ static void* map(void* v){
         //sem_wait(&w);
         write(web->writefd,tmp,strlen(tmp));
         write(web->writefd,",",1);
-        write(web->writefd,maxCC->ccode,strlen(maxCC->ccode));
+        write(web->writefd,maxCC->ccode,strlen(maxCC->ccode));      // writing to one end of socket pair 
         write(web->writefd,"\n",1);
         //sem_post(&w);
         pthread_mutex_unlock(&lock_mutex);
         freecountry(countryduplicate);
         free(maxCC);
-        usleep(500);
+        usleep(500);                    //Sleeping so that epoll doesn't exit without reading each file in directory 
     }
 
     return NULL;
@@ -254,7 +260,7 @@ static void* reduce(void* v){
 
         pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
-        f = epoll_wait(epfd,events,1,1000);
+        f = epoll_wait(epfd,events,1,1000);             //epoll wait if any fd is being ready to be read
         
         if(f>0){
 
@@ -359,7 +365,7 @@ static void* reduce(void* v){
 
         pthread_mutex_unlock(&lock_mutex);
     }
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);            //Enable set cancel state 
     usleep(5);
     
 }
